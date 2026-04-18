@@ -166,7 +166,7 @@ export const AlertList: React.FC<AlertListProps> = ({
   }
 
   const getPendingCount = () => {
-    return stats?.active || 0
+    return stats?.total_active || 0
   }
 
   const alertTypeOptions: { value: AlertType; label: string }[] = [

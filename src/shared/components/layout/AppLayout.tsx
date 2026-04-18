@@ -1,7 +1,7 @@
 // src/shared/components/layout/AppLayout.tsx
 
 import React, { useState } from 'react'
-import { Layout, Menu, Button, Typography, Space, Avatar, Dropdown } from 'antd'
+import { Layout, Menu, Button, Typography, Space, Avatar, Dropdown, Badge } from 'antd'
 import { 
   MenuFoldOutlined, 
   MenuUnfoldOutlined,
@@ -17,6 +17,7 @@ import {
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import type { MenuProps } from 'antd'
+import { usePendingAlertCount } from '@/modules/alerts/hooks/useAlerts'
 
 const { Header, Sider, Content } = Layout
 const { Title } = Typography
@@ -26,6 +27,9 @@ export const AppLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  
+  // Bekleyen uyarı sayısını çek (API çağrısı yapacak, 30 saniyede bir güncelleyecek)
+  const { data: pendingAlertCount } = usePendingAlertCount()
 
   const menuItems: MenuProps['items'] = [
     {
@@ -56,8 +60,11 @@ export const AppLayout: React.FC = () => {
       key: '/alerts',
       icon: <BellOutlined />,
       label: (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: collapsed ? 0 : 8 }}>
           <span>Uyarılar</span>
+          {pendingAlertCount !== undefined && pendingAlertCount > 0 && !collapsed && (
+            <Badge count={pendingAlertCount} style={{ backgroundColor: '#ff4d4f' }} />
+          )}
         </div>
       ),
       onClick: () => navigate('/alerts')

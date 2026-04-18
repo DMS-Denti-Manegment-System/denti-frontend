@@ -208,15 +208,25 @@ export const useClinicSummaryStats = (filters?: ReportFilter) =>
           bestPerformer,
           worstPerformer,
           topCategories,
-          monthlyTrend: [] // API'den gelecek olan comparison verisi için placeholder
+          monthlyTrend: []
         }
       } catch (err) {
         console.error('Clinic summary stats error:', err)
-        message.error('Klinik özet istatistikleri yüklenirken hata oluştu')
-        throw err
+        // Throw etme, varsayılan değerler dön
+        return {
+          totalClinics: 0,
+          totalConsumption: 0,
+          avgEfficiency: 0,
+          totalCost: 0,
+          bestPerformer: null,
+          worstPerformer: null,
+          topCategories: [],
+          monthlyTrend: []
+        }
       }
     },
     staleTime: 5 * 60 * 1_000,
+    retry: false,
     refetchOnWindowFocus: false
   })
 
@@ -228,7 +238,6 @@ export const useClinicPerformanceComparison = (filters?: ReportFilter) =>
     queryKey: [ 'clinic-reports', 'performance-comparison', filters],
     queryFn : async () => {
       try {
-        // Use the existing comparison endpoint since getPerformanceComparison doesn't exist
         const { data } = await reportsApi.clinics.getComparison([], filters)
         return (data as RawClinicComparisonItem[]).map<ClinicComparisonData>(c => ({
           clinicId  : c.id,
@@ -242,11 +251,11 @@ export const useClinicPerformanceComparison = (filters?: ReportFilter) =>
         }))
       } catch (err) {
         console.error('Clinic performance comparison error:', err)
-        message.error('Klinik performans karşılaştırması yüklenirken hata oluştu')
-        throw err
+        return [] as ClinicComparisonData[]
       }
     },
     staleTime: 5 * 60 * 1_000,
+    retry: false,
     refetchOnWindowFocus: false
   })
 

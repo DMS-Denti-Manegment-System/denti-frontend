@@ -120,19 +120,14 @@ export const alertApi = {
     }
   },
 
-  // Bekleyen uyarılar (sayı) - EN PROBLEM YARATAN ENDPOINT!
+  // Bekleyen uyarılar (sayı)
   getPendingCount: async (clinicId?: number): Promise<ApiResponse<{ count: number }>> => {
     try {
       const queryString = clinicId ? `?clinic_id=${clinicId}` : ''
       return await api.get(`/stock-alerts/pending/count${queryString}`)
     } catch (error) {
-      console.warn('❌ Pending count endpoint error (404):', error)
-      // 404 hatası varsa mock data döndür
-      return {
-        success: true,
-        data: { count: 0 },
-        message: 'Pending count endpoint not available - returning mock data'
-      } as ApiResponse<{ count: number }>
+      console.warn('❌ Pending count endpoint error:', error)
+      throw error
     }
   },
 

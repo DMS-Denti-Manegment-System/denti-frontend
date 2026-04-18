@@ -21,21 +21,11 @@ import {
 import dayjs, { Dayjs } from 'dayjs'
 import { useStocks } from '../hooks/useStocks'
 import { CreateStockRequest, Stock } from '../types/stock.types'
+import { useSuppliers } from '../../supplier/hooks/useSuppliers'
+import { useClinics } from '../../clinics/hooks/useClinics'
 
 const { Option } = Select
 const { TextArea } = Input
-
-// Mock suppliers and clinics - gerçek hook'ları varsa import edin
-const mockSuppliers = [
-  { id: 1, name: 'Tedarikçi A' },
-  { id: 2, name: 'Tedarikçi B' },
-  { id: 3, name: 'Tedarikçi C' }
-]
-
-const mockClinics = [
-  { id: 1, name: 'Ana Klinik', code: 'ANA' },
-  { id: 2, name: 'Şube Klinik', code: 'SB1' }
-]
 
 // StockForm için interface
 interface StockFormProps {
@@ -66,6 +56,9 @@ interface StockFormValues {
   track_batch?: boolean
   storage_location?: string
   is_active?: boolean
+  has_sub_unit?: boolean
+  sub_unit_name?: string
+  sub_unit_multiplier?: number
 }
 
 export const StockForm: React.FC<StockFormProps> = ({ 
@@ -78,8 +71,15 @@ export const StockForm: React.FC<StockFormProps> = ({
   // useStocks hook'unu kullan
   const { createStock, updateStock, isCreating, isUpdating } = useStocks({})
 
+  // Tedarikçileri API'den çek
+  const { suppliers, isLoading: isSuppliersLoading } = useSuppliers()
+
+  // Klinikleri API'den çek
+  const { clinics, isLoading: isClinicsLoading } = useClinics({ is_active: true })
+
   useEffect(() => {
     if (stock) {
+      const multiplier = (stock.has_sub_unit && stock.sub_unit_multiplier) ? stock.sub_unit_multiplier : 1;
       form.setFieldsValue({
         name: stock.name,
         description: stock.description,
@@ -87,10 +87,10 @@ export const StockForm: React.FC<StockFormProps> = ({
         unit: stock.unit,
         category: stock.category,
         current_stock: stock.current_stock,
-        min_stock_level: stock.min_stock_level,
-        critical_stock_level: stock.critical_stock_level,
-        yellow_alert_level: stock.yellow_alert_level,
-        red_alert_level: stock.red_alert_level,
+        min_stock_level: stock.min_stock_level / multiplier,
+        critical_stock_level: stock.critical_stock_level / multiplier,
+        yellow_alert_level: stock.yellow_alert_level ? (stock.yellow_alert_level / multiplier) : undefined,
+        red_alert_level: stock.red_alert_level ? (stock.red_alert_level / multiplier) : undefined,
         purchase_price: stock.purchase_price,
         currency: stock.currency,
         supplier_id: stock.supplier_id,
@@ -100,25 +100,31 @@ export const StockForm: React.FC<StockFormProps> = ({
         track_expiry: stock.track_expiry,
         track_batch: stock.track_batch,
         storage_location: stock.storage_location,
-        is_active: stock.is_active
+        is_active: stock.is_active,
+        has_sub_unit: stock.has_sub_unit,
+        sub_unit_name: stock.sub_unit_name,
+        sub_unit_multiplier: stock.sub_unit_multiplier
       })
     } else {
       // Yeni stok için default değerler
       form.setFieldsValue({
         currency: 'TRY',
         is_active: true,
-        unit: 'adet',
+        unit: 'Kutu',
         track_expiry: true,
         track_batch: false,
         current_stock: 0,
         min_stock_level: 10,
-        critical_stock_level: 5
+        critical_stock_level: 5,
+        has_sub_unit: false
       })
     }
   }, [stock, form])
 
   const onFinish = async (values: StockFormValues) => {
     try {
+      const multiplier = (values.has_sub_unit && values.sub_unit_multiplier) ? values.sub_unit_multiplier : 1;
+
       const formData: CreateStockRequest = {
         name: values.name,
         description: values.description,
@@ -126,10 +132,11 @@ export const StockForm: React.FC<StockFormProps> = ({
         unit: values.unit,
         category: values.category,
         current_stock: values.current_stock,
-        min_stock_level: values.min_stock_level,
-        critical_stock_level: values.critical_stock_level,
-        yellow_alert_level: values.yellow_alert_level || values.min_stock_level,
-        red_alert_level: values.red_alert_level || values.critical_stock_level,
+        // Alarm seviyelerini alt birim çarpanı ile çarparak gönderiyoruz (Base Units)
+        min_stock_level: values.min_stock_level * multiplier,
+        critical_stock_level: values.critical_stock_level * multiplier,
+        yellow_alert_level: (values.yellow_alert_level || values.min_stock_level) * multiplier,
+        red_alert_level: (values.red_alert_level || values.critical_stock_level) * multiplier,
         purchase_price: values.purchase_price,
         currency: values.currency || 'TRY',
         supplier_id: values.supplier_id,
@@ -139,7 +146,10 @@ export const StockForm: React.FC<StockFormProps> = ({
         track_expiry: values.track_expiry,
         track_batch: values.track_batch,
         storage_location: values.storage_location,
-        is_active: values.is_active
+        is_active: values.is_active,
+        has_sub_unit: values.has_sub_unit,
+        sub_unit_name: values.has_sub_unit ? values.sub_unit_name : undefined,
+        sub_unit_multiplier: values.has_sub_unit ? values.sub_unit_multiplier : undefined
       }
 
       console.log('📝 Form Data to Send:', formData)
@@ -191,6 +201,8 @@ export const StockForm: React.FC<StockFormProps> = ({
     { label: 'USD', value: 'USD' },
     { label: 'EUR', value: 'EUR' }
   ]
+
+  const hasSubUnit = Form.useWatch('has_sub_unit', form)
 
   return (
     <Form
@@ -278,10 +290,47 @@ export const StockForm: React.FC<StockFormProps> = ({
 
       <Divider orientation="left">Stok Miktarları</Divider>
 
+      <Row gutter={16} align="middle">
+        <Col span={8}>
+          <Form.Item
+            label="Alt Birim (Paket İçi Ürün) Var mı?"
+            name="has_sub_unit"
+            valuePropName="checked"
+            tooltip="Bu stok kendi içinde daha küçük birimlere bölünerek kullanılıyorsa işaretleyin (Örn: 1 Kutunun içinde 20 Tüp olması)"
+          >
+            <Switch checkedChildren="Var" unCheckedChildren="Yok" />
+          </Form.Item>
+        </Col>
+
+        {hasSubUnit && (
+          <>
+            <Col span={8}>
+              <Form.Item
+                label="Alt Birim Adı (Örn: Tüp, Doz)"
+                name="sub_unit_name"
+                rules={[{ required: true, message: 'Alt birim adı gereklidir!' }]}
+              >
+                <Input placeholder="Tüp, Doz, Adet vb." />
+              </Form.Item>
+            </Col>
+
+            <Col span={8}>
+              <Form.Item
+                label="Çarpan (1 Kapalı Kutu/Ana Birim = Kaç Alt Birim?)"
+                name="sub_unit_multiplier"
+                rules={[{ required: true, message: 'Çarpan gereklidir!' }]}
+              >
+                <InputNumber min={2} style={{ width: '100%' }} placeholder="20" />
+              </Form.Item>
+            </Col>
+          </>
+        )}
+      </Row>
+
       <Row gutter={16}>
         <Col span={8}>
           <Form.Item
-            label="Mevcut Stok"
+            label={`Mevcut Stok ${hasSubUnit ? '(Kapalı Kutu Sayısı)' : ''}`}
             name="current_stock"
             rules={[{ required: true, message: 'Mevcut stok gereklidir!' }]}
           >
@@ -406,8 +455,10 @@ export const StockForm: React.FC<StockFormProps> = ({
               placeholder="Tedarikçi seçin"
               showSearch
               optionFilterProp="children"
+              loading={isSuppliersLoading}
+              notFoundContent={isSuppliersLoading ? 'Yükleniyor...' : 'Tedarikçi bulunamadı'}
             >
-              {mockSuppliers.map((supplier) => (
+              {(suppliers ?? []).map((supplier) => (
                 <Option key={supplier.id} value={supplier.id}>
                   {supplier.name}
                 </Option>
@@ -426,8 +477,10 @@ export const StockForm: React.FC<StockFormProps> = ({
               placeholder="Klinik seçin"
               showSearch
               optionFilterProp="children"
+              loading={isClinicsLoading}
+              notFoundContent={isClinicsLoading ? 'Yükleniyor...' : 'Klinik bulunamadı'}
             >
-              {mockClinics.map((clinic) => (
+              {(clinics ?? []).filter(c => c.is_active).map((clinic) => (
                 <Option key={clinic.id} value={clinic.id}>
                   {clinic.name} ({clinic.code})
                 </Option>

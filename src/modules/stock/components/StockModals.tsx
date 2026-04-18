@@ -164,7 +164,7 @@ export const StockModals: React.FC<StockModalsProps> = ({
         onCancel={onUseModalClose}
         footer={null}
         width={500}
-        destroyOnClose
+        
       >
         <Form
           form={useForm}
@@ -172,7 +172,11 @@ export const StockModals: React.FC<StockModalsProps> = ({
           onFinish={onUseSubmit}
         >
           <Alert
-            message={`Mevcut Miktar: ${selectedStock?.current_stock} ${selectedStock?.unit}`}
+            message={
+              selectedStock?.has_sub_unit 
+                ? `Mevcut Miktar: ${selectedStock?.current_stock} Kutu + Açık ${selectedStock?.current_sub_stock} ${selectedStock?.sub_unit_name} (Toplam: ${selectedStock?.total_base_units} ${selectedStock?.sub_unit_name})`
+                : `Mevcut Miktar: ${selectedStock?.current_stock} ${selectedStock?.unit}`
+            }
             type="info"
             style={{ marginBottom: 16 }}
           />
@@ -186,13 +190,14 @@ export const StockModals: React.FC<StockModalsProps> = ({
           </Form.Item>
 
           <Form.Item
-            label="Kullanılacak Miktar"
+            label={`Kullanılacak Miktar ${selectedStock?.has_sub_unit ? '(' + selectedStock?.sub_unit_name + ' / Doz)' : ''}`}
             name="quantity"
             rules={[
               { required: true, message: 'Miktar gereklidir!' },
               { 
                 validator: (_, value) => {
-                  if (value && selectedStock && value > selectedStock.current_stock) {
+                  const maxAmount = selectedStock?.has_sub_unit ? selectedStock.total_base_units : selectedStock?.current_stock;
+                  if (value && selectedStock && maxAmount !== undefined && value > maxAmount) {
                     return Promise.reject('Mevcut stoktan fazla miktar kullanılamaz!')
                   }
                   return Promise.resolve()
@@ -202,7 +207,7 @@ export const StockModals: React.FC<StockModalsProps> = ({
           >
             <InputNumber 
               min={1} 
-              max={selectedStock?.current_stock}
+              max={selectedStock?.has_sub_unit ? selectedStock.total_base_units : selectedStock?.current_stock}
               style={{ width: '100%' }}
               placeholder="Kullanılacak miktar"
             />

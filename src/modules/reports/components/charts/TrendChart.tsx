@@ -108,7 +108,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({
     const combinedData = trendData.trends.map((trend, index) => {
       const forecastItem = trendData.forecast[index]
       return {
-        label: trend.label || `Period ${index + 1}`,
+        label: trend.label || trend.date || `Dönem ${index + 1}`,
         value: trend.value,
         actualValue: trend.value,
         forecastValue: forecastItem?.predicted || null,
@@ -119,7 +119,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({
     if (showForecastData && trendData.forecast) {
       // Forecast data mapping
       const forecastData = trendData.forecast.map((forecast, index) => ({
-        label: forecast.label || `Forecast ${index + 1}`,
+        label: forecast.label || forecast.date || `Tahmin ${index + 1}`,
         value: forecast.predicted,
         actualValue: null,
         forecastValue: forecast.predicted,

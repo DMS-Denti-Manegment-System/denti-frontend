@@ -176,7 +176,6 @@ export const useSupplierSummaryStats = (filters?: ReportFilter) => {
         const performance = performanceData.data
         const purchase = purchaseData.data
         
-        // Safe data access with default values
         const suppliers = performance.suppliers || []
         const activeSuppliers = suppliers.filter(s => (s.activeProducts || 0) > 0)
         
@@ -193,7 +192,7 @@ export const useSupplierSummaryStats = (filters?: ReportFilter) => {
           worstPerformer: suppliers.length > 0 ? suppliers.reduce((worst, current) => 
             calculatePerformanceScore(current) < calculatePerformanceScore(worst) ? current : worst
           ) : null,
-          deliveryTrend: purchase.monthlyTrends?.slice(-6) || [], // Son 6 ay
+          deliveryTrend: purchase.monthlyTrends?.slice(-6) || [],
           categoryBreakdown: purchase.categoryBreakdown?.map((cat: { name: string; value: number }) => ({
             name: cat.name,
             value: cat.value,
@@ -202,8 +201,6 @@ export const useSupplierSummaryStats = (filters?: ReportFilter) => {
         }
       } catch (error) {
         console.error('Supplier summary stats error:', error)
-        
-        // Return default structure on error
         return {
           totalSuppliers: 0,
           activeSuppliers: 0,
@@ -219,6 +216,7 @@ export const useSupplierSummaryStats = (filters?: ReportFilter) => {
       }
     },
     staleTime: 1000 * 60 * 5,
+    retry: false,
     refetchOnWindowFocus: false
   })
 }

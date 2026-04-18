@@ -26,9 +26,10 @@ interface StockTableProps {
   stocks: Stock[]
   loading: boolean
   onEdit: (stock: Stock) => void
-  onSoftDelete: (id: number) => void      // ✅ YENİ - Pasif yap
-  onHardDelete: (id: number) => void      // ✅ YENİ - Kalıcı sil
-  onReactivate: (id: number) => void      // ✅ YENİ - Aktif et
+  onDelete: (id: number) => void          // ✅ YENİ - Standart Akıllı Silme
+  onSoftDelete: (id: number) => void      // Pasif yap
+  onHardDelete: (id: number) => void      // Zorla (Force) kalıcı sil
+  onReactivate: (id: number) => void      // Aktif et
   onAdjust: (stock: Stock) => void
   onUse: (stock: Stock) => void
 }
@@ -37,109 +38,33 @@ export const StockTable: React.FC<StockTableProps> = ({
   stocks,
   loading,
   onEdit,
-  onSoftDelete,     // ✅ YENİ
-  onHardDelete,     // ✅ YENİ  
-  onReactivate,     // ✅ YENİ
+  onDelete,         // Standart Delete
+  onSoftDelete,     // Deactivate
+  onHardDelete,     // Force Delete
+  onReactivate,     // Reactivate
   onAdjust,
   onUse,
 }) => {
-  // ✅ GELİŞMİŞ SILME HANDLER - Pasif/Aktif/Kalıcı Silme Seçenekleri
-  const handleAdvancedDelete = (record: Stock) => {
-    const isActive = record.is_active !== false // Default true
-    const isDeleted = record.status === 'deleted'
+  const [advancedModalStock, setAdvancedModalStock] = React.useState<Stock | null>(null)
 
+  // Standart Silme Onayı
+  const handleDeleteConfirm = (id: number) => {
     Modal.confirm({
-      title: (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ExclamationCircleOutlined style={{ color: '#faad14' }} />
-          <span>Stok İşlemi Seçin</span>
-        </div>
-      ),
-      content: (
-        <div>
-          <p><strong>Stok:</strong> {record.name}</p>
-          <p><strong>Mevcut Miktar:</strong> {record.current_stock} {record.unit}</p>
-          <p><strong>Mevcut Durum:</strong> {
-            isDeleted ? '🗑️ Silinmiş' : 
-            !isActive ? '⏸️ Pasif' : 
-            '✅ Aktif'
-          }</p>
-          
-          <div style={{ 
-            background: '#f0f0f0', 
-            padding: 12, 
-            borderRadius: 6, 
-            marginTop: 16 
-          }}>
-            <p style={{ margin: 0, fontSize: 13 }}>
-              <strong>Seçenekleriniz:</strong><br/>
-              • <strong>Pasif Yap:</strong> Stok görünür ama kullanılamaz (geri alınabilir)<br/>
-              • <strong>Aktif Et:</strong> Pasif stoku tekrar aktif yapar<br/>
-              • <strong>Kalıcı Sil:</strong> Stok tamamen silinir (geri alınamaz)<br/>
-              <em style={{ color: '#666' }}>* İşlem kayıtları olan stoklar kalıcı silinemez</em>
-            </p>
-          </div>
-        </div>
-      ),
-      footer: (
-        <div style={{ textAlign: 'right' }}>
-          <Button key="cancel" onClick={() => Modal.destroyAll()}>
-            İptal
-          </Button>
-          
-          {/* Pasif Yap Butonu - Sadece aktif stoklar için */}
-          {isActive && !isDeleted && (
-            <Button 
-              key="soft" 
-              type="default" 
-              icon={<PauseOutlined />}
-              style={{ marginLeft: 8, backgroundColor: '#faad14', borderColor: '#faad14', color: 'white' }}
-              onClick={async () => {
-                Modal.destroyAll()
-                await onSoftDelete(record.id)
-              }}
-            >
-              ⏸️ Pasif Yap
-            </Button>
-          )}
-          
-          {/* Aktif Et Butonu - Sadece pasif stoklar için */}
-          {!isActive && !isDeleted && (
-            <Button 
-              key="reactivate" 
-              type="primary" 
-              icon={<PlayCircleOutlined />}
-              style={{ marginLeft: 8, backgroundColor: '#52c41a', borderColor: '#52c41a' }}
-              onClick={async () => {
-                Modal.destroyAll()
-                await onReactivate(record.id)
-              }}
-            >
-              ✅ Aktif Et
-            </Button>
-          )}
-          
-          {/* Kalıcı Sil Butonu - Silinmiş olanlar hariç */}
-          {!isDeleted && (
-            <Button 
-              key="hard" 
-              type="primary" 
-              danger 
-              icon={<StopOutlined />}
-              style={{ marginLeft: 8 }}
-              onClick={async () => {
-                Modal.destroyAll()
-                await onHardDelete(record.id)
-              }}
-            >
-              🗑️ Kalıcı Sil
-            </Button>
-          )}
-        </div>
-      ),
-      width: 600,
-    })
-  }
+      title: 'Stoku Silmek İstediğinize Emin Misiniz?',
+      icon: <ExclamationCircleOutlined />,
+      content: 'Bu işlem, stok kullanım geçmişine göre ya kalıcı olarak siler ya da otomatik olarak pasife alır.',
+      okText: 'Evet, Sil',
+      okType: 'danger',
+      cancelText: 'İptal',
+      onOk: () => {
+        onDelete(id);
+      }
+    });
+  };
+
+  const handleAdvancedDelete = (record: Stock) => {
+    setAdvancedModalStock(record);
+  };
 
   // Status hesaplama - DÜZELTİLMİŞ VERSİYON
   const getStockStatus = (record: Stock) => {
@@ -231,7 +156,7 @@ export const StockTable: React.FC<StockTableProps> = ({
     {
       title: 'Mevcut Stok',
       key: 'current_stock',
-      width: 120,
+      width: 180,
       align: 'center',
       render: (_, record) => {
         const status = getStockStatus(record)
@@ -250,10 +175,31 @@ export const StockTable: React.FC<StockTableProps> = ({
             <div style={{ 
               fontSize: 12, 
               color: status.type === 'deleted' ? '#ccc' : '#666',
-              textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
+              textDecoration: status.type === 'deleted' ? 'line-through' : 'none',
+              marginBottom: record.has_sub_unit ? '8px' : '0'
             }}>
               {record.unit}
             </div>
+            {record.has_sub_unit && (
+              <>
+                <div style={{ 
+                  fontWeight: 600, 
+                  fontSize: 14,
+                  color: record.current_sub_stock === 0 ? '#999' : 
+                         status.type === 'deleted' ? '#ccc' : '#1890ff',
+                  textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
+                }}>
+                  + {record.current_sub_stock} Açık
+                </div>
+                <div style={{ 
+                  fontSize: 11, 
+                  color: status.type === 'deleted' ? '#ccc' : '#1890ff',
+                  textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
+                }}>
+                  {record.sub_unit_name} (Top: {record.total_base_units})
+                </div>
+              </>
+            )}
           </div>
         )
       },
@@ -411,9 +357,17 @@ export const StockTable: React.FC<StockTableProps> = ({
             disabled: isDeleted
           },
           {
-            key: 'delete-options',
-            label: 'Durum İşlemleri',
+            key: 'delete-standard',
+            label: 'Sil (Güvenli)',
             icon: <DeleteOutlined />,
+            danger: true,
+            onClick: () => handleDeleteConfirm(record.id),
+            disabled: isDeleted
+          },
+          {
+            key: 'delete-options',
+            label: 'Gelişmiş Seçenekler',
+            icon: <MoreOutlined />,
             onClick: () => handleAdvancedDelete(record)
           }
         ]
@@ -430,7 +384,7 @@ export const StockTable: React.FC<StockTableProps> = ({
               />
             </Tooltip>
             
-            <Tooltip title="Stok İşlemleri">
+            <Tooltip title="Stok Kullan (Düş)">
               <Button 
                 type="text" 
                 size="small"
@@ -440,18 +394,14 @@ export const StockTable: React.FC<StockTableProps> = ({
               />
             </Tooltip>
 
-            {/* ✅ YENİ - Gelişmiş Silme/Durum Butonu */}
-            <Tooltip title="Durum İşlemleri (Pasif/Aktif/Sil)">
+            <Tooltip title="Güvenli Sil">
               <Button 
                 type="text" 
                 size="small"
+                danger
                 icon={<DeleteOutlined />}
-                onClick={() => handleAdvancedDelete(record)}
-                style={{ 
-                  color: isDeleted ? '#ccc' : 
-                         isInactive ? '#faad14' : 
-                         '#ff4d4f' 
-                }}
+                onClick={() => handleDeleteConfirm(record.id)}
+                disabled={isDeleted}
               />
             </Tooltip>
             
@@ -465,6 +415,7 @@ export const StockTable: React.FC<StockTableProps> = ({
   ]
 
   return (
+    <>
     <Table
       columns={columns}
       dataSource={stocks}
@@ -495,5 +446,85 @@ export const StockTable: React.FC<StockTableProps> = ({
         }
       }}
     />
+
+    {/* Gelişmiş Seçenekler Modalı */}
+    <Modal
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ExclamationCircleOutlined style={{ color: '#faad14' }} />
+          <span>Gelişmiş Durum & Güvenlik İşlemleri</span>
+        </div>
+      }
+      open={!!advancedModalStock}
+      onCancel={() => setAdvancedModalStock(null)}
+      footer={null}
+      width={500}
+      destroyOnClose
+    >
+      {advancedModalStock && (
+        <div>
+          <p><strong>Stok:</strong> {advancedModalStock.name}</p>
+          <p><strong>Mevcut Durum:</strong> {
+             advancedModalStock.status === 'deleted' ? '🗑️ Silinmiş' : 
+             advancedModalStock.is_active === false ? '⏸️ Pasif' : 
+             '✅ Aktif'
+          }</p>
+          
+          <div style={{ background: '#fff1f0', padding: 12, borderRadius: 6, margin: '16px 0' }}>
+            <p style={{ margin: 0, fontSize: 13, color: '#cf1322' }}>
+              <strong>⚠️ Zorla Silme (Force Delete):</strong><br/>
+              İşlem geçmişi olan stokları bile zorla siler. Raporlarda tutarsızlığa neden olabilir.
+            </p>
+          </div>
+
+          <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+            <Button onClick={() => setAdvancedModalStock(null)}>İptal</Button>
+            
+            {/* Pasife Al */}
+            {advancedModalStock.is_active !== false && advancedModalStock.status !== 'deleted' && (
+              <Button 
+                icon={<PauseOutlined />}
+                onClick={async () => {
+                  await onSoftDelete(advancedModalStock.id)
+                  setAdvancedModalStock(null)
+                }}
+              >
+                Pasife Al
+              </Button>
+            )}
+
+            {/* Aktif Et */}
+            {advancedModalStock.is_active === false && advancedModalStock.status !== 'deleted' && (
+              <Button 
+                type="primary"
+                icon={<PlayCircleOutlined />}
+                onClick={async () => {
+                  await onReactivate(advancedModalStock.id)
+                  setAdvancedModalStock(null)
+                }}
+              >
+                Aktif Et
+              </Button>
+            )}
+
+            {/* Zorla Sil */}
+            {advancedModalStock.status !== 'deleted' && (
+              <Button 
+                type="primary" 
+                danger 
+                icon={<StopOutlined />}
+                onClick={async () => {
+                  await onHardDelete(advancedModalStock.id)
+                  setAdvancedModalStock(null)
+                }}
+              >
+                Zorla Sil
+              </Button>
+            )}
+          </Space>
+        </div>
+      )}
+    </Modal>
+    </>
   )
 }

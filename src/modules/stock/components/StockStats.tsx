@@ -29,7 +29,7 @@ export const StockStats: React.FC<StockStatsProps> = ({ stats }) => {
       <Col span={6}>
         <Card>
           <Statistic 
-            title="Toplam Stok" 
+            title="Ürün Adeti" 
             value={stats.total_items}
             prefix={<SettingOutlined />}
           />

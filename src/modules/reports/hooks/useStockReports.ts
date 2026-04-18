@@ -40,13 +40,11 @@ export const useStockChartsData = (filters?: ReportFilter): UseQueryResult<Stock
     queryKey: ['stock-reports', 'charts', filters],
     queryFn: async () => {
       try {
-        // Paralel olarak birden fazla API çağrısı yapalım
         const [levelsData, categoryData] = await Promise.all([
           reportsApi.stocks.getLevelsReport(filters),
           reportsApi.stocks.getCategoryAnalysis(filters)
         ])
 
-        // Chart data'yı transform edelim
         const transformedData: StockChartsData = {
           levelChart: levelsData.data.summary ? [{
             category: 'Stok Seviyeleri',
@@ -61,18 +59,19 @@ export const useStockChartsData = (filters?: ReportFilter): UseQueryResult<Stock
             value: cat.totalItems,
             label: `${cat.totalItems} ürün`,
             color: getColorByStockLevel(cat.lowStockCount || 0, cat.criticalStockCount || 0),
-            percentage: 0 // Backend'den hesaplanacak
+            percentage: 0
           })) || []
         }
 
         return transformedData
       } catch (error) {
         console.error('Stock charts data error:', error)
-        message.error('Grafik verileri yüklenirken hata oluştu')
-        throw error
+        // Hata durumunda boş data dön, throw yapma
+        return { levelChart: [], usageChart: [], categoryChart: [] } as StockChartsData
       }
     },
-    staleTime: 1000 * 60 * 3, // 3 minutes
+    staleTime: 1000 * 60 * 3,
+    retry: false,
     refetchOnWindowFocus: false
   })
 }
@@ -85,40 +84,32 @@ export const useStockTrendAnalysis = (filters?: ReportFilter): UseQueryResult<St
   return useQuery({
     queryKey: ['stock-reports', 'trends', filters],
     queryFn: async () => {
-      try {
-        await reportsApi.stocks.getTrendAnalysis(filters)
-        
-        // Mock data transform - Backend implementasyonuna kadar
-        const mockTrendData: StockTrendAnalysis = {
-          trends: [
-            { date: '2024-01-01', metric: 'Stok', value: 850, change: 0, changePercent: 0 },
-            { date: '2024-02-01', metric: 'Stok', value: 920, change: 70, changePercent: 8.2 },
-            { date: '2024-03-01', metric: 'Stok', value: 780, change: -140, changePercent: -15.2 },
-            { date: '2024-04-01', metric: 'Stok', value: 890, change: 110, changePercent: 14.1 },
-            { date: '2024-05-01', metric: 'Stok', value: 940, change: 50, changePercent: 5.6 },
-            { date: '2024-06-01', metric: 'Stok', value: 820, change: -120, changePercent: -12.8 }
-          ],
-          forecast: [
-            { date: '2024-07-01', predicted: 860, confidence: 85, upperBound: 900, lowerBound: 820 },
-            { date: '2024-08-01', predicted: 880, confidence: 80, upperBound: 930, lowerBound: 830 },
-            { date: '2024-09-01', predicted: 900, confidence: 75, upperBound: 960, lowerBound: 840 }
-          ],
-          kpis: {
-            totalValue: 5200,
-            avgTurnover: 0.75,
-            efficiency: 85.5,
-            costSavings: 12500
-          }
+      // Mock data - backend endpoint hazır olana kadar
+      const mockTrendData: StockTrendAnalysis = {
+        trends: [
+          { date: 'Oca', label: 'Oca', metric: 'Stok', value: 850, change: 0, changePercent: 0 },
+          { date: 'Şub', label: 'Şub', metric: 'Stok', value: 920, change: 70, changePercent: 8.2 },
+          { date: 'Mar', label: 'Mar', metric: 'Stok', value: 780, change: -140, changePercent: -15.2 },
+          { date: 'Nis', label: 'Nis', metric: 'Stok', value: 890, change: 110, changePercent: 14.1 },
+          { date: 'May', label: 'May', metric: 'Stok', value: 940, change: 50, changePercent: 5.6 },
+          { date: 'Haz', label: 'Haz', metric: 'Stok', value: 820, change: -120, changePercent: -12.8 }
+        ],
+        forecast: [
+          { date: 'Tem', label: 'Tem', predicted: 860, confidence: 85, upperBound: 900, lowerBound: 820 },
+          { date: 'Ağu', label: 'Ağu', predicted: 880, confidence: 80, upperBound: 930, lowerBound: 830 },
+          { date: 'Eyl', label: 'Eyl', predicted: 900, confidence: 75, upperBound: 960, lowerBound: 840 }
+        ],
+        kpis: {
+          totalValue: 5200,
+          avgTurnover: 0.75,
+          efficiency: 85.5,
+          costSavings: 12500
         }
-
-        return mockTrendData
-      } catch (error) {
-        console.error('Stock trend analysis error:', error)
-        message.error('Trend analizi yüklenirken hata oluştu')
-        throw error
       }
+      return mockTrendData
     },
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 10,
+    retry: false,
     refetchOnWindowFocus: false
   })
 }
@@ -130,82 +121,24 @@ export const useStockTrendAnalysis = (filters?: ReportFilter): UseQueryResult<St
 export const useStockUsageReport = (filters?: ReportFilter): UseQueryResult<StockUsageData, Error> => {
   return useQuery({
     queryKey: ['stock-reports', 'usage', filters],
-    queryFn: async () => {
-      try {
-        await reportsApi.stocks.getUsageReport(filters)
-        
-        // Mock data transform - Backend implementasyonuna kadar
-        const mockUsageData: StockUsageData = {
-          data: [
-            {
-              date: '01.06',
-              fullDate: '2024-06-01',
-              totalUsage: 45,
-              Ortodonti: 12,
-              Periodontoloji: 8,
-              Endodonti: 15,
-              Protez: 6,
-              Pedodonti: 4
-            },
-            {
-              date: '02.06',
-              fullDate: '2024-06-02',
-              totalUsage: 38,
-              Ortodonti: 10,
-              Periodontoloji: 9,
-              Endodonti: 12,
-              Protez: 4,
-              Pedodonti: 3
-            },
-            {
-              date: '03.06',
-              fullDate: '2024-06-03',
-              totalUsage: 52,
-              Ortodonti: 15,
-              Periodontoloji: 11,
-              Endodonti: 18,
-              Protez: 5,
-              Pedodonti: 3
-            },
-            {
-              date: '04.06',
-              fullDate: '2024-06-04',
-              totalUsage: 41,
-              Ortodonti: 11,
-              Periodontoloji: 7,
-              Endodonti: 16,
-              Protez: 4,
-              Pedodonti: 3
-            },
-            {
-              date: '05.06',
-              fullDate: '2024-06-05',
-              totalUsage: 47,
-              Ortodonti: 13,
-              Periodontoloji: 9,
-              Endodonti: 17,
-              Protez: 5,
-              Pedodonti: 3
-            }
-          ],
-          summary: {
-            totalUsage: 223,
-            avgDaily: 44.6,
-            trend: 'stable'
-          },
-          daily: [],
-          weekly: [],
-          monthly: []
-        }
-
-        return mockUsageData
-      } catch (error) {
-        console.error('Stock usage report error:', error)
-        message.error('Kullanım raporu yüklenirken hata oluştu')
-        throw error
+    queryFn: async (): Promise<StockUsageData> => {
+      // Mock data - backend endpoint hazır olana kadar
+      return {
+        data: [
+          { date: '01.06', fullDate: '2024-06-01', totalUsage: 45, Ortodonti: 12, Periodontoloji: 8, Endodonti: 15, Protez: 6, Pedodonti: 4 },
+          { date: '02.06', fullDate: '2024-06-02', totalUsage: 38, Ortodonti: 10, Periodontoloji: 9, Endodonti: 12, Protez: 4, Pedodonti: 3 },
+          { date: '03.06', fullDate: '2024-06-03', totalUsage: 52, Ortodonti: 15, Periodontoloji: 11, Endodonti: 18, Protez: 5, Pedodonti: 3 },
+          { date: '04.06', fullDate: '2024-06-04', totalUsage: 41, Ortodonti: 11, Periodontoloji: 7, Endodonti: 16, Protez: 4, Pedodonti: 3 },
+          { date: '05.06', fullDate: '2024-06-05', totalUsage: 47, Ortodonti: 13, Periodontoloji: 9, Endodonti: 17, Protez: 5, Pedodonti: 3 }
+        ],
+        summary: { totalUsage: 223, avgDaily: 44.6, trend: 'stable' },
+        daily: [],
+        weekly: [],
+        monthly: []
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
+    retry: false,
     refetchOnWindowFocus: false
   })
 }
@@ -259,13 +192,11 @@ export const useAllStockReports = (filters?: ReportFilter) => {
     queryKey: ['stock-reports', 'dashboard', filters],
     queryFn: async () => {
       try {
-        // Paralel API çağrıları
         const [levels, movements, categories] = await Promise.all([
           reportsApi.stocks.getLevelsReport(filters),
           reportsApi.stocks.getMovementsReport(filters),
           reportsApi.stocks.getCategoryAnalysis(filters)
         ])
-
         return {
           levels: levels.data,
           movements: movements.data,
@@ -273,11 +204,13 @@ export const useAllStockReports = (filters?: ReportFilter) => {
         }
       } catch (error) {
         console.error('All stock reports error:', error)
-        message.error('Stok raporları yüklenirken hata oluştu')
-        throw error
+        // Throw etme, boş data dön
+        return { levels: null, movements: null, categories: null }
       }
     },
-    staleTime: 1000 * 60 * 5
+    staleTime: 1000 * 60 * 5,
+    retry: false,
+    refetchOnWindowFocus: false
   })
 }
 
@@ -297,11 +230,13 @@ export const useStockStatusSummary = (filters?: ReportFilter) => {
         }
       } catch (error) {
         console.error('Stock status summary error:', error)
-        message.error('Stok durumu özeti yüklenirken hata oluştu')
-        throw error
+        // Throw etme, sıfır değerler dön
+        return { total: 0, normal: 0, low: 0, critical: 0, outOfStock: 0 }
       }
     },
-    staleTime: 1000 * 60 * 3
+    staleTime: 1000 * 60 * 3,
+    retry: false,
+    refetchOnWindowFocus: false
   })
 }
 

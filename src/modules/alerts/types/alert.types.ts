@@ -93,27 +93,11 @@ export interface Alert {
   }
   
   export interface AlertStats {
-    total: number
-    active: number
-    resolved: number
-    dismissed: number
-    by_severity: {
-      low: number
-      medium: number
-      high: number
-      critical: number
-    }
-    by_type: {
-      low_stock: number
-      critical_stock: number
-      out_of_stock: number
-      expiry_warning: number
-      expiry_critical: number
-      expired: number
-      stock_request: number
-      stock_transfer: number
-      system: number
-    }
+    total_active: number
+    low_stock: number
+    critical_stock: number
+    expired: number
+    near_expiry: number
   }
   
   export interface AlertSettings {

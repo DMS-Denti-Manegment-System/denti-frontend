@@ -35,6 +35,7 @@ export const StockList: React.FC = () => {
     softDeleteStock,      // ✅ YENİ - Pasif yap
     hardDeleteStock,      // ✅ YENİ - Kalıcı sil
     reactivateStock,      // ✅ YENİ - Aktif et
+    deleteStock,          // Standart Akıllı Silme
     adjustStock, 
     useStock: executeStockUsage,
     isAdjusting,
@@ -106,6 +107,15 @@ export const StockList: React.FC = () => {
     setEditingStock(stock)
     setIsFormModalVisible(true)
   }, [])
+
+  // Standart Silme
+  const handleDelete = useCallback(async (id: number) => {
+    try {
+      await deleteStock(id)
+    } catch (error) {
+      console.error('Silme hatası:', error)
+    }
+  }, [deleteStock])
 
   // ✅ YENİ HANDLER'LAR - Pasif/Aktif/Kalıcı Silme
   const handleSoftDelete = useCallback(async (id: number) => {
@@ -202,12 +212,12 @@ export const StockList: React.FC = () => {
         onRefresh={refetch}
       />
 
-      {/* Ana Tablo - ✅ YENİ HANDLER'LAR EKLENDİ */}
       <Card>
         <StockTable 
           stocks={stocks || []}
           loading={isLoading || isSoftDeleting || isHardDeleting || isReactivating}
           onEdit={handleEdit}
+          onDelete={handleDelete}
           onSoftDelete={handleSoftDelete}      // ✅ YENİ - Pasif yap
           onHardDelete={handleHardDelete}      // ✅ YENİ - Kalıcı sil
           onReactivate={handleReactivate}      // ✅ YENİ - Aktif et

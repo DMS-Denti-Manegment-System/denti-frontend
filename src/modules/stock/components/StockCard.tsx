@@ -89,6 +89,8 @@ export const StockCard: React.FC<StockCardProps> = ({
     return dayjs(stock.expiry_date).isBefore(dayjs())
   }
 
+  const stockAmount = stock.has_sub_unit && stock.total_base_units !== undefined ? stock.total_base_units : stock.current_stock;
+
   return (
     <>
       <Card
@@ -96,8 +98,8 @@ export const StockCard: React.FC<StockCardProps> = ({
         style={{ 
           width: '100%',
           borderLeft: `4px solid ${
-            stock.current_stock <= stock.critical_stock_level ? '#ff4d4f' :
-            stock.current_stock <= stock.min_stock_level ? '#faad14' : '#52c41a'
+            stockAmount <= stock.critical_stock_level ? '#ff4d4f' :
+            stockAmount <= stock.min_stock_level ? '#faad14' : '#52c41a'
           }`
         }}
         actions={[
@@ -213,9 +215,18 @@ export const StockCard: React.FC<StockCardProps> = ({
               {stock.is_active ? 'Aktif' : 'Pasif'}
             </Tag>
           </Descriptions.Item>
-          <Descriptions.Item label="Mevcut Miktar">{stock.current_stock} {stock.unit}</Descriptions.Item>
-          <Descriptions.Item label="Minimum Miktar">{stock.min_stock_level} {stock.unit}</Descriptions.Item>
-          <Descriptions.Item label="Kritik Miktar">{stock.critical_stock_level} {stock.unit}</Descriptions.Item>
+          <Descriptions.Item label="Mevcut Miktar" span={2}>
+            {stock.has_sub_unit 
+              ? `${stock.current_stock} ${stock.unit} + ${stock.current_sub_stock} Açık ${stock.sub_unit_name} (Toplam: ${stock.total_base_units} ${stock.sub_unit_name})`
+              : `${stock.current_stock} ${stock.unit}`
+            }
+          </Descriptions.Item>
+          <Descriptions.Item label="Minimum Miktar">
+            {stock.has_sub_unit ? `${stock.min_stock_level} ${stock.sub_unit_name}` : `${stock.min_stock_level} ${stock.unit}`}
+          </Descriptions.Item>
+          <Descriptions.Item label="Kritik Miktar">
+            {stock.has_sub_unit ? `${stock.critical_stock_level} ${stock.sub_unit_name}` : `${stock.critical_stock_level} ${stock.unit}`}
+          </Descriptions.Item>
           <Descriptions.Item label="Depolama Yeri">{stock.storage_location || '-'}</Descriptions.Item>
           <Descriptions.Item label="Alış Fiyatı">{stock.purchase_price} {stock.currency}</Descriptions.Item>
           <Descriptions.Item label="Tedarikçi">{stock.supplier?.name || '-'}</Descriptions.Item>

@@ -85,157 +85,60 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ clinicId }) => {
 
       {/* İstatistik Kartları */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={12} sm={6}>
+        <Col xs={24} sm={8}>
           <Card>
             <Statistic
-              title="Toplam Uyarı"
-              value={stats?.total || 0}
-              prefix={<BellOutlined style={{ color: '#1890ff' }} />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        
-        <Col xs={12} sm={6}>
-          <Card>
-            <Statistic
-              title="Aktif"
-              value={stats?.active || 0}
+              title="Toplam Aktif Uyarı"
+              value={stats?.total_active || 0}
               prefix={<ExclamationCircleOutlined style={{ color: '#fa8c16' }} />}
               valueStyle={{ color: '#fa8c16' }}
             />
           </Card>
         </Col>
         
-        <Col xs={12} sm={6}>
+        <Col xs={12} sm={8}>
           <Card>
             <Statistic
-              title="Çözümlenen"
-              value={stats?.resolved || 0}
-              prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-              valueStyle={{ color: '#52c41a' }}
+              title="Düşük Stok"
+              value={stats?.low_stock || 0}
+              prefix={<InfoCircleOutlined style={{ color: '#1890ff' }} />}
+              valueStyle={{ color: '#1890ff' }}
             />
           </Card>
         </Col>
-        
-        <Col xs={12} sm={6}>
+
+        <Col xs={12} sm={8}>
           <Card>
             <Statistic
-              title="Yok Sayılan"
-              value={stats?.dismissed || 0}
-              prefix={<CloseCircleOutlined style={{ color: '#999' }} />}
-              valueStyle={{ color: '#999' }}
+              title="Kritik Stok"
+              value={stats?.critical_stock || 0}
+              prefix={<FireOutlined style={{ color: '#ff4d4f' }} />}
+              valueStyle={{ color: '#ff4d4f' }}
             />
           </Card>
         </Col>
       </Row>
 
       <Row gutter={[16, 16]}>
-        {/* Önem Seviyesi Dağılımı */}
-        <Col xs={24} lg={12}>
-          <Card title="Önem Seviyesi Dağılımı" size="small">
-            <Space direction="vertical" style={{ width: '100%' }} size={12}>
-              <div>
-                <Row justify="space-between" align="middle">
-                  <Col>
-                    <AlertSeverityBadge severity="critical" size="small" />
-                  </Col>
-                  <Col flex="auto" style={{ paddingLeft: 12 }}>
-                    <Progress
-                      percent={stats?.total ? (stats.by_severity.critical / stats.total) * 100 : 0}
-                      strokeColor="#ff4d4f"
-                      showInfo={false}
-                    />
-                  </Col>
-                  <Col style={{ paddingLeft: 8 }}>
-                    <Text strong>{stats?.by_severity.critical || 0}</Text>
-                  </Col>
-                </Row>
-              </div>
-
-              <div>
-                <Row justify="space-between" align="middle">
-                  <Col>
-                    <AlertSeverityBadge severity="high" size="small" />
-                  </Col>
-                  <Col flex="auto" style={{ paddingLeft: 12 }}>
-                    <Progress
-                      percent={stats?.total ? (stats.by_severity.high / stats.total) * 100 : 0}
-                      strokeColor="#fa8c16"
-                      showInfo={false}
-                    />
-                  </Col>
-                  <Col style={{ paddingLeft: 8 }}>
-                    <Text strong>{stats?.by_severity.high || 0}</Text>
-                  </Col>
-                </Row>
-              </div>
-
-              <div>
-                <Row justify="space-between" align="middle">
-                  <Col>
-                    <AlertSeverityBadge severity="medium" size="small" />
-                  </Col>
-                  <Col flex="auto" style={{ paddingLeft: 12 }}>
-                    <Progress
-                      percent={stats?.total ? (stats.by_severity.medium / stats.total) * 100 : 0}
-                      strokeColor="#faad14"
-                      showInfo={false}
-                    />
-                  </Col>
-                  <Col style={{ paddingLeft: 8 }}>
-                    <Text strong>{stats?.by_severity.medium || 0}</Text>
-                  </Col>
-                </Row>
-              </div>
-
-              <div>
-                <Row justify="space-between" align="middle">
-                  <Col>
-                    <AlertSeverityBadge severity="low" size="small" />
-                  </Col>
-                  <Col flex="auto" style={{ paddingLeft: 12 }}>
-                    <Progress
-                      percent={stats?.total ? (stats.by_severity.low / stats.total) * 100 : 0}
-                      strokeColor="#1890ff"
-                      showInfo={false}
-                    />
-                  </Col>
-                  <Col style={{ paddingLeft: 8 }}>
-                    <Text strong>{stats?.by_severity.low || 0}</Text>
-                  </Col>
-                </Row>
-              </div>
-            </Space>
+        <Col xs={12} sm={12}>
+          <Card>
+            <Statistic
+              title="Son Kullanması Yaklaşan"
+              value={stats?.near_expiry || 0}
+              prefix={<WarningOutlined style={{ color: '#faad14' }} />}
+              valueStyle={{ color: '#faad14' }}
+            />
           </Card>
         </Col>
-
-        {/* Uyarı Tiplerinin Dağılımı */}
-        <Col xs={24} lg={12}>
-          <Card title="Uyarı Tipleri" size="small">
-            <Space direction="vertical" style={{ width: '100%' }} size={8}>
-              {stats && Object.entries(stats.by_type).map(([type, count]) => {
-                if (count === 0) return null
-                
-                return (
-                  <Row key={type} justify="space-between" align="middle">
-                    <Col>
-                      <AlertTypeBadge type={type as AlertType} size="small" />
-                    </Col>
-                    <Col>
-                      <Text strong>{count}</Text>
-                    </Col>
-                  </Row>
-                )
-              })}
-              
-              {stats && Object.values(stats.by_type).every(count => count === 0) && (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-                  <InfoCircleOutlined style={{ fontSize: '24px', marginBottom: '8px' }} />
-                  <div>Henüz uyarı bulunmuyor</div>
-                </div>
-              )}
-            </Space>
+        
+        <Col xs={12} sm={12}>
+          <Card>
+            <Statistic
+              title="Süresi Geçmiş"
+              value={stats?.expired || 0}
+              prefix={<CloseCircleOutlined style={{ color: '#595959' }} />}
+              valueStyle={{ color: '#595959' }}
+            />
           </Card>
         </Col>
       </Row>

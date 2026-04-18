@@ -15,6 +15,13 @@ export interface Stock {
   yellow_alert_level?: number
   red_alert_level?: number
   
+  // Alt Birim (Kutu / Paket İçi Parça) Özellikleri
+  has_sub_unit?: boolean
+  sub_unit_name?: string
+  sub_unit_multiplier?: number
+  current_sub_stock?: number
+  total_base_units?: number
+  
   // Fiyat Bilgileri
   purchase_price: number
   currency?: string
@@ -75,6 +82,11 @@ export interface CreateStockRequest {
   yellow_alert_level?: number
   red_alert_level?: number
   
+  // Alt Birim Özellikleri
+  has_sub_unit?: boolean
+  sub_unit_name?: string
+  sub_unit_multiplier?: number
+  
   purchase_price: number
   currency?: string
   supplier_id: number
@@ -99,6 +111,9 @@ export interface UpdateStockRequest {
   critical_stock_level?: number
   yellow_alert_level?: number
   red_alert_level?: number
+  has_sub_unit?: boolean
+  sub_unit_name?: string
+  sub_unit_multiplier?: number
   purchase_price?: number
   currency?: string
   supplier_id?: number

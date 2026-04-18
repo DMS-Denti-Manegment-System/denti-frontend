@@ -372,6 +372,7 @@ export interface ClinicStockData { // ✅ ADDED
   clinicId: number
   clinicName: string
   totalStock: number
+  totalValue: number
   lowStock: number
   criticalStock: number
 }
