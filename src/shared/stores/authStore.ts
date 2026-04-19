@@ -23,11 +23,9 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, token) => {
         set({ user, token, isAuthenticated: true });
       },
-      
+
       logout: () => {
         set({ user: null, token: null, isAuthenticated: false });
-        // Zustand persist handles localStorage, but we can be explicit if needed
-        localStorage.removeItem('denti-auth-storage');
       },
       
       updateUser: (updatedUser) => {

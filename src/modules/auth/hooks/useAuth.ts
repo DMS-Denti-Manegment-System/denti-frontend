@@ -15,8 +15,8 @@ export const useAuth = () => {
     setLoading(true);
     try {
       const response = await authApi.login(credentials);
-      if (response.success) {
-        setAuth(response.data.user, response.data.access_token);
+      if (response.success && response.data) {
+        setAuth(response.data.user, response.data.token);
         message.success('Giriş başarılı! Hoş geldiniz.');
         return true;
       }
