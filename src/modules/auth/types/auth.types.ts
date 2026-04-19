@@ -25,3 +25,10 @@ export interface LoginCredentials {
   email: string;
   password?: string; // Şimdilik opsiyonel, bazı sistemler sadece email ile başlayabilir
 }
+
+export interface AcceptInvitationPayload {
+  token: string;
+  name: string;
+  password: string;
+  password_confirmation: string;
+}

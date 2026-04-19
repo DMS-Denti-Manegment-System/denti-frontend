@@ -1,22 +1,23 @@
 // src/modules/auth/services/authApi.ts
 
 import { api } from '../../../shared/services/api';
-import { AuthResponse, LoginCredentials } from '../types/auth.types';
+import { AuthResponse, LoginCredentials, AcceptInvitationPayload } from '../types/auth.types';
 
 export const authApi = {
-  // Login doğru, backend'deki Route::post('/login', ...) ile eşleşiyor.
   login: (credentials: LoginCredentials): Promise<AuthResponse> => 
     api.post('/login', credentials),
     
-  // HATA BURADAYDI: api.post('/logout') yazıyordu. 
-  // Backend'de prefix var, bu yüzden /auth/logout olmalı.
+  // Endpoint düzeltildi: /auth/logout
   logout: (): Promise<{ success: boolean; message: string }> => 
     api.post('/auth/logout'),
     
-  // HATA BURADAYDI: api.get('/user') yazıyordu. 
-  // Backend'de Route::get('/auth/me', ...) olarak tanımlı.
+  // Endpoint düzeltildi: /auth/me
   me: (): Promise<AuthResponse> => 
-    api.get('/auth/me'), 
+    api.get('/auth/me'),
+
+  // Yeni Eklenen: Davet Kabul İşlemi
+  acceptInvitation: (data: AcceptInvitationPayload): Promise<AuthResponse> =>
+    api.post('/invitations/accept', data),
 };
 
 export default authApi;

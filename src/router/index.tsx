@@ -5,6 +5,8 @@ import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AppLayout } from '../shared/components/layout/AppLayout'
 import { ProtectedRoute } from './ProtectedRoute'
 import { LoginPage } from '../modules/auth/pages/LoginPage'
+// Yeni sayfayı import et
+import { AcceptInvitationPage } from '../modules/auth/pages/AcceptInvitationPage' 
 import { StocksPage } from '../modules/stock/pages/StocksPage'
 import { SuppliersPage } from '../modules/supplier/pages/SuppliersPage'
 import { ClinicsPage } from '../modules/clinics/pages/ClinicsPage'
@@ -16,6 +18,11 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />
+  },
+  // Davet kabul rotası eklendi
+  {
+    path: '/accept-invitation/:token',
+    element: <AcceptInvitationPage />
   },
   {
     path: '/',
@@ -29,6 +36,7 @@ const router = createBrowserRouter([
         index: true,
         element: <Navigate to="/stocks" replace />
       },
+      // ... diğer mevcut rotalar
       {
         path: 'stocks',
         element: <StocksPage />
