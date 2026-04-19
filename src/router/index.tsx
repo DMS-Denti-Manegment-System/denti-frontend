@@ -3,6 +3,8 @@
 import React from 'react'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AppLayout } from '../shared/components/layout/AppLayout'
+import { ProtectedRoute } from './ProtectedRoute'
+import { LoginPage } from '../modules/auth/pages/LoginPage'
 import { StocksPage } from '../modules/stock/pages/StocksPage'
 import { SuppliersPage } from '../modules/supplier/pages/SuppliersPage'
 import { ClinicsPage } from '../modules/clinics/pages/ClinicsPage'
@@ -10,13 +12,18 @@ import { StockRequestsPage } from '@/modules/stockRequest/pages/StockRequestsPag
 import { AlertsPage } from '@/modules/alerts/pages/AlertsPage'
 import { ReportsPage } from '@/modules/reports/pages/ReportsPage'
 
-
-
-
 const router = createBrowserRouter([
   {
+    path: '/login',
+    element: <LoginPage />
+  },
+  {
     path: '/',
-    element: <AppLayout />,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -54,7 +61,6 @@ const router = createBrowserRouter([
   }
 ])
 
-// Router Component'i export et
 export const Router: React.FC = () => {
   return <RouterProvider router={router} />
 }

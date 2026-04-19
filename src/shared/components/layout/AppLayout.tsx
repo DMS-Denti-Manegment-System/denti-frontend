@@ -18,6 +18,7 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import type { MenuProps } from 'antd'
 import { usePendingAlertCount } from '@/modules/alerts/hooks/useAlerts'
+import { useAuth } from '@/modules/auth/hooks/useAuth'
 
 const { Header, Sider, Content } = Layout
 const { Title } = Typography
@@ -27,9 +28,16 @@ export const AppLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, logout } = useAuth()
   
   // Bekleyen uyarı sayısını çek (API çağrısı yapacak, 30 saniyede bir güncelleyecek)
   const { data: pendingAlertCount } = usePendingAlertCount()
+
+  const handleUserMenuClick: MenuProps['onClick'] = ({ key }) => {
+    if (key === 'logout') {
+      logout().then(() => navigate('/login'))
+    }
+  }
 
   const menuItems: MenuProps['items'] = [
     {
@@ -155,10 +163,10 @@ export const AppLayout: React.FC = () => {
           />
           
           <Space>
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+            <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }} placement="bottomRight">
               <Space style={{ cursor: 'pointer' }}>
-                <Avatar icon={<UserOutlined />} />
-                <span>Admin User</span>
+                <Avatar icon={<UserOutlined />} src={user?.avatar} />
+                <span>{user?.name || 'Kullanıcı'}</span>
               </Space>
             </Dropdown>
           </Space>

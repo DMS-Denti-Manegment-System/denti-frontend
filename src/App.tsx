@@ -1,11 +1,13 @@
 // src/App.tsx
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { ConfigProvider } from 'antd'
+import { ConfigProvider, App as AntdApp } from 'antd'
 import trTR from 'antd/locale/tr_TR'
 import { Router } from './router'
+import { useAuth } from './modules/auth/hooks/useAuth'
+import { AntdStaticHelper } from './shared/utils/antdHelper'
 
 // React Query configuration
 const queryClient = new QueryClient({
@@ -13,10 +15,20 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5, // 5 dakika
       refetchOnWindowFocus: false,
-      retry: 3,
+      retry: 1, // Oturum hatalarında çok fazla retry yapmasın
     },
   },
 })
+
+const AppContent = () => {
+  const { checkSession } = useAuth();
+
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
+  return <Router />
+}
 
 function App() {
   return (
@@ -33,7 +45,11 @@ function App() {
           },
         }}
       >
-        <Router />
+        <AntdApp>
+          <AntdStaticHelper>
+            <AppContent />
+          </AntdStaticHelper>
+        </AntdApp>
       </ConfigProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

@@ -147,7 +147,7 @@ export const ClinicList: React.FC = () => {
         onCancel={handleCreateCancel}
         footer={null}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         <ClinicForm 
           onSuccess={handleCreateSuccess}
@@ -162,7 +162,7 @@ export const ClinicList: React.FC = () => {
         onCancel={handleEditCancel}
         footer={null}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         {editingClinic && (
           <ClinicForm 

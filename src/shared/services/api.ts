@@ -1,7 +1,8 @@
 // src/shared/services/api.ts
 
 import axios from 'axios'
-import { message } from 'antd'
+import { antdHelper } from '../utils/antdHelper'
+import { useAuthStore } from '../stores/authStore'
 
 // API instance oluştur
 export const api = axios.create({
@@ -10,28 +11,21 @@ export const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 10000, // 10 saniye timeout
+  timeout: 10000,
 })
 
 // Request Interceptor - Token ekleme
 api.interceptors.request.use(
   (config) => {
-    // Debug için request'i logla
-    console.log('🚀 API Request:', {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-      baseURL: config.baseURL,
-      data: config.data
-    })
-    
-    const token = localStorage.getItem('authToken')
-    if (token) {
+    // Store'dan doğrudan token'ı al (En güvenli yol)
+    const token = useAuthStore.getState().token
+
+    if (token && token !== 'null' && token !== 'undefined') {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
   (error) => {
-    console.error('❌ Request Error:', error)
     return Promise.reject(error)
   }
 )
@@ -39,51 +33,32 @@ api.interceptors.request.use(
 // Response Interceptor
 api.interceptors.response.use(
   (response) => {
-    // Debug için response'u logla
-    console.log('✅ API Response:', {
-      status: response.status,
-      url: response.config.url,
-      data: response.data
-    })
-    
-    // Laravel API format: { success: true, data: {...}, message: "..." }
     return response.data
   },
   (error) => {
-    // Debug için error'u logla
-    console.error('❌ API Error:', {
-      status: error.response?.status,
-      url: error.config?.url,
-      message: error.response?.data?.message,
-      data: error.response?.data
-    })
-    
     // Error handling
     if (error.response?.status === 401) {
-      localStorage.removeItem('authToken')
-      message.error('Oturum süreniz doldu!')
+      antdHelper.message?.error('Oturum süreniz doldu!')
     } else if (error.response?.status === 403) {
-      message.error('Bu işlemi yapmaya yetkiniz yok!')
+      antdHelper.message?.error('Bu işlemi yapmaya yetkiniz yok!')
     } else if (error.response?.status === 404) {
-      message.error('İstenen kaynak bulunamadı!')
+      // Background checks (like /user or /stats) might fail with 404 on some setups
+      console.warn('404 Error:', error.config.url)
     } else if (error.response?.status === 422) {
       // Validation errors
       const errors = error.response.data?.errors
       if (errors) {
         (Object.values(errors).flat() as string[]).forEach((err) => {
-          message.error(err)
+          antdHelper.message?.error(err)
         })
       } else {
-        message.error(error.response.data?.message || 'Validation hatası!')
+        antdHelper.message?.error(error.response.data?.message || 'Validation hatası!')
       }
     } else if (error.response?.status >= 500) {
-      message.error('Sunucu hatası! Backend çalışıyor mu kontrol edin.')
-    } else if (error.code === 'ECONNABORTED') {
-      message.error('İstek zaman aşımına uğradı!')
-    } else if (error.code === 'ERR_NETWORK') {
-      message.error('Ağ hatası! Backend çalışıyor mu?')
+      antdHelper.message?.error('Sunucu hatası! Backend çalışıyor mu kontrol edin.')
     } else {
-      message.error(error.response?.data?.message || error.message || 'Bir hata oluştu!')
+      const msg = error.response?.data?.message || error.message || 'Bir hata oluştu!'
+      antdHelper.message?.error(msg)
     }
     
     return Promise.reject(error)

@@ -316,9 +316,8 @@ export const StockTable: React.FC<StockTableProps> = ({
       onCancel={() => setAdvancedModalStock(null)}
       footer={null}
       width={500}
-      destroyOnClose
-    >
-      {advancedModalStock && (
+      destroyOnHidden
+      >      {advancedModalStock && (
         <div>
           <p><strong>Stok:</strong> {advancedModalStock.name}</p>
           <p><strong>Mevcut Durum:</strong> {
