@@ -1,7 +1,9 @@
 // src/modules/stock/components/StockTable.tsx
 
 import React from 'react'
-import { Table, Tag, Tooltip, Space, Button, Dropdown, Modal } from 'antd'
+import { Table, Tag, Tooltip, Space, Button, Dropdown, Modal, Typography, Avatar } from 'antd'
+
+const { Text, Title } = Typography
 import { 
   EditOutlined,
   DeleteOutlined,
@@ -21,6 +23,7 @@ import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import { Stock } from '../types/stock.types'
 import { StockLevelBadge } from './StockLevelBadge'
+import { formatStock } from '../../../shared/utils/helpers'
 
 interface StockTableProps {
   stocks: Stock[]
@@ -46,20 +49,11 @@ export const StockTable: React.FC<StockTableProps> = ({
   onUse,
 }) => {
   const [advancedModalStock, setAdvancedModalStock] = React.useState<Stock | null>(null)
+  const [deleteStockId, setDeleteStockId] = React.useState<number | null>(null)
 
   // Standart Silme Onayı
   const handleDeleteConfirm = (id: number) => {
-    Modal.confirm({
-      title: 'Stoku Silmek İstediğinize Emin Misiniz?',
-      icon: <ExclamationCircleOutlined />,
-      content: 'Bu işlem, stok kullanım geçmişine göre ya kalıcı olarak siler ya da otomatik olarak pasife alır.',
-      okText: 'Evet, Sil',
-      okType: 'danger',
-      cancelText: 'İptal',
-      onOk: () => {
-        onDelete(id);
-      }
-    });
+    setDeleteStockId(id);
   };
 
   const handleAdvancedDelete = (record: Stock) => {
@@ -93,258 +87,157 @@ export const StockTable: React.FC<StockTableProps> = ({
 
   const columns: ColumnsType<Stock> = [
     {
-      title: 'Ürün Bilgileri',
-      key: 'product_info',
-      width: 300,
-      render: (_, record) => {
-        const status = getStockStatus(record)
-        
-        return (
+      title: '📦 Ürün',
+      key: 'name',
+      fixed: 'left',
+      width: 250,
+      render: (_, record) => (
+        <Space size={12}>
+          <Avatar 
+            shape="rounded"
+            style={{ backgroundColor: '#e6f7ff', color: '#1890ff', fontWeight: 'bold' }}
+          >
+            {record.name.charAt(0).toUpperCase()}
+          </Avatar>
           <div>
-            <div style={{ 
-              fontWeight: 600, 
-              marginBottom: 4,
-              opacity: status.type === 'deleted' ? 0.5 : 1,
-              textDecoration: status.type === 'deleted' ? 'line-through' : 'none',
-              color: status.type === 'deleted' ? '#999' : 'inherit'
-            }}>
-              {record.name}
-              {status.type === 'deleted' && (
-                <Tag color="red" style={{ marginLeft: 8 }}>
-                  🗑️ SİLİNDİ
-                </Tag>
-              )}
-              {status.type === 'inactive' && (
-                <Tag color="orange" style={{ marginLeft: 8 }}>
-                  ⏸️ PASİF
-                </Tag>
-              )}
-            </div>
-            {record.brand && (
-              <Tag 
-                color="blue" 
-                style={{ 
-                  opacity: status.type === 'deleted' ? 0.5 : 1 
-                }}
-              >
-                {record.brand}
-              </Tag>
-            )}
+            <Text strong style={{ fontSize: 13, display: 'block' }}>{record.name}</Text>
             {record.description && (
-              <div style={{ 
-                fontSize: 12, 
-                color: status.type === 'deleted' ? '#ccc' : '#666', 
-                marginTop: 4,
-                textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
-              }}>
+              <Text type="secondary" style={{ fontSize: 11 }} ellipsis={{ tooltip: record.description }}>
                 {record.description}
-              </div>
+              </Text>
             )}
           </div>
-        )
-      },
-    },
-    {
-      title: 'Kategori',
-      dataIndex: 'category',
-      key: 'category',
-      width: 150,
-      render: (category) => (
-        <Tag color="geekblue">{category}</Tag>
+        </Space>
       ),
     },
     {
-      title: 'Mevcut Stok',
-      key: 'current_stock',
-      width: 180,
-      align: 'center',
-      render: (_, record) => {
-        const status = getStockStatus(record)
-        
-        return (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              fontWeight: 600, 
-              fontSize: 16,
-              color: record.current_stock === 0 ? '#999' : 
-                     status.type === 'deleted' ? '#ccc' : 'inherit',
-              textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
-            }}>
-              {record.current_stock}
-            </div>
-            <div style={{ 
-              fontSize: 12, 
-              color: status.type === 'deleted' ? '#ccc' : '#666',
-              textDecoration: status.type === 'deleted' ? 'line-through' : 'none',
-              marginBottom: record.has_sub_unit ? '8px' : '0'
-            }}>
-              {record.unit}
-            </div>
-            {record.has_sub_unit && (
-              <>
-                <div style={{ 
-                  fontWeight: 600, 
-                  fontSize: 14,
-                  color: record.current_sub_stock === 0 ? '#999' : 
-                         status.type === 'deleted' ? '#ccc' : '#1890ff',
-                  textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
-                }}>
-                  + {record.current_sub_stock} Açık
-                </div>
-                <div style={{ 
-                  fontSize: 11, 
-                  color: status.type === 'deleted' ? '#ccc' : '#1890ff',
-                  textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
-                }}>
-                  {record.sub_unit_name} (Top: {record.total_base_units})
-                </div>
-              </>
-            )}
-          </div>
-        )
-      },
+      title: '🏷️ Marka',
+      dataIndex: 'brand',
+      key: 'brand',
+      width: 120,
+      render: (brand) => brand ? <Tag color="blue">{brand}</Tag> : <Text type="secondary">-</Text>
     },
     {
-      title: 'Durum',
+      title: '🗂️ Kategori',
+      dataIndex: 'category',
+      key: 'category',
+      width: 120,
+      render: (cat) => <Tag color="cyan">{cat}</Tag>
+    },
+    {
+      title: '🔢 Mevcut Stok',
+      key: 'current_stock',
+      width: 180,
+      render: (_, record) => (
+        <div>
+          <Text strong style={{ fontSize: 13 }}>
+            {formatStock(
+              record.current_stock,
+              record.unit,
+              record.has_sub_unit,
+              record.current_sub_stock,
+              record.sub_unit_name
+            )}
+          </Text>
+          {record.has_sub_unit && (
+            <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 2 }}>
+              Toplam: {record.total_base_units || ((record.current_stock * (record.sub_unit_multiplier || 0)) + (record.current_sub_stock || 0))} {record.sub_unit_name}
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      title: '⚡ Durum',
       key: 'status',
       width: 120,
       align: 'center',
-      render: (_, record) => {
-        const status = getStockStatus(record)
-        
-        return (
-          <div>
-            <Tag color={status.color}>
-              {status.text}
-            </Tag>
-            {status.type === 'active' && <StockLevelBadge stock={record} />}
-          </div>
-        )
-      },
+      render: (_, record) => <StockLevelBadge stock={record} />
     },
     {
-      title: 'Min/Kritik',
-      key: 'limits',
-      width: 100,
+      title: '📉 Min',
+      dataIndex: 'min_stock_level',
+      key: 'min_stock_level',
+      width: 80,
       align: 'center',
-      render: (_, record) => {
-        const status = getStockStatus(record)
-        
-        return (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              fontSize: 12,
-              color: status.type === 'deleted' ? '#ccc' : 'inherit',
-              textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
-            }}>
-              Min: {record.min_stock_level}
-            </div>
-            <div style={{ 
-              fontSize: 12, 
-              color: status.type === 'deleted' ? '#ccc' : '#ff4d4f',
-              textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
-            }}>
-              Kritik: {record.critical_stock_level}
-            </div>
-          </div>
-        )
-      },
     },
     {
-      title: 'Fiyat',
-      key: 'price',
+      title: '⚠️ Kritik',
+      dataIndex: 'critical_stock_level',
+      key: 'critical_stock_level',
+      width: 80,
+      align: 'center',
+      render: (val) => <Text type="danger" strong>{val}</Text>
+    },
+    {
+      title: '💸 Birim Fiyat',
+      dataIndex: 'purchase_price',
+      key: 'purchase_price',
       width: 120,
       align: 'right',
-      render: (_, record) => {
-        const status = getStockStatus(record)
-        
-        return (
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ 
-              fontWeight: 600,
-              color: status.type === 'deleted' ? '#ccc' : 'inherit',
-              textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
-            }}>
-              {record.purchase_price} {record.currency || 'TRY'}
-            </div>
-            <div style={{ 
-              fontSize: 12, 
-              color: status.type === 'deleted' ? '#ccc' : '#666',
-              textDecoration: status.type === 'deleted' ? 'line-through' : 'none'
-            }}>
-              Toplam: {(record.purchase_price * record.current_stock).toLocaleString()} {record.currency || 'TRY'}
-            </div>
-          </div>
-        )
-      },
+      render: (val, record) => <Text style={{ color: '#52c41a' }}>{val} {record.currency || 'TRY'}</Text>
     },
     {
-      title: 'Son Kullanma',
+      title: '💰 Toplam Değer',
+      key: 'total_value',
+      width: 130,
+      align: 'right',
+      render: (_, record) => <Text strong>{(record.purchase_price * record.current_stock).toLocaleString()} {record.currency || 'TRY'}</Text>
+    },
+    {
+      title: '📅 S.K.T',
       dataIndex: 'expiry_date',
       key: 'expiry_date',
       width: 120,
       align: 'center',
-      render: (expiry_date) => {
-        if (!expiry_date) return <span style={{ color: '#999' }}>-</span>
-        
-        const expiryDate = dayjs(expiry_date)
-        const today = dayjs()
-        const daysLeft = expiryDate.diff(today, 'day')
-        
-        let color = 'green'
-        if (daysLeft <= 0) color = 'red'
-        else if (daysLeft <= 7) color = 'orange'
-        else if (daysLeft <= 30) color = 'yellow'
-        
+      render: (date) => {
+        if (!date) return <Text type="secondary">-</Text>
+        const days = dayjs(date).diff(dayjs(), 'day')
         return (
-          <Tooltip title={`${daysLeft} gün kaldı`}>
-            <Tag color={color} icon={<CalendarOutlined />}>
-              {expiryDate.format('DD/MM/YYYY')}
-            </Tag>
+          <Tooltip title={`${days < 0 ? 'Geçti' : `${days} gün kaldı`}`}>
+            <span style={{ color: days < 30 ? '#ff4d4f' : 'inherit' }}>
+              {dayjs(date).format('DD/MM/YYYY')}
+            </span>
           </Tooltip>
         )
-      },
+      }
     },
     {
-      title: 'Tedarikçi',
+      title: '🏪 Tedarikçi',
       key: 'supplier',
       width: 150,
-      render: (_, record) => (
-        <div>
-          <div style={{ fontSize: 12 }}>
-            <ShopOutlined /> {record.supplier?.name || 'Bilinmiyor'}
-          </div>
-          <div style={{ fontSize: 12, color: '#666' }}>
-            <BankOutlined /> {record.clinic?.name || 'Bilinmiyor'}
-          </div>
-        </div>
-      ),
+      render: (_, record) => record.supplier?.name || <Text type="secondary">-</Text>
     },
     {
-      title: 'İşlemler',
-      key: 'actions',
+      title: '🏥 Klinik',
+      key: 'clinic',
       width: 150,
-      align: 'center',
+      render: (_, record) => record.clinic?.name || <Text type="secondary">-</Text>
+    },
+    {
+      title: '⚙️',
+      key: 'actions',
+      width: 60,
       fixed: 'right',
+      align: 'center',
       render: (_, record) => {
         const status = getStockStatus(record)
-        const isDeleted = status.type === 'deleted'
         const isInactive = status.type === 'inactive'
         
         const menuItems: MenuProps['items'] = [
-          {
-            key: 'adjust',
-            label: 'Stok Ayarla',
-            icon: <PlusOutlined />,
-            onClick: () => onAdjust(record),
-            disabled: isDeleted || isInactive
-          },
           {
             key: 'use',
             label: 'Stok Kullan',
             icon: <MinusOutlined />,
             onClick: () => onUse(record),
-            disabled: isDeleted || isInactive || record.current_stock <= 0
+            disabled: isInactive || record.current_stock <= 0
+          },
+          {
+            key: 'adjust',
+            label: 'Stok Ayarla',
+            icon: <PlusOutlined />,
+            onClick: () => onAdjust(record),
+            disabled: isInactive
           },
           {
             type: 'divider'
@@ -353,16 +246,14 @@ export const StockTable: React.FC<StockTableProps> = ({
             key: 'edit',
             label: 'Düzenle',
             icon: <EditOutlined />,
-            onClick: () => onEdit(record),
-            disabled: isDeleted
+            onClick: () => onEdit(record)
           },
           {
             key: 'delete-standard',
             label: 'Sil (Güvenli)',
             icon: <DeleteOutlined />,
             danger: true,
-            onClick: () => handleDeleteConfirm(record.id),
-            disabled: isDeleted
+            onClick: () => handleDeleteConfirm(record.id)
           },
           {
             key: 'delete-options',
@@ -373,42 +264,13 @@ export const StockTable: React.FC<StockTableProps> = ({
         ]
 
         return (
-          <Space>
-            <Tooltip title={isDeleted || isInactive ? 'Pasif/Silinmiş stok düzenlenemez' : 'Düzenle'}>
-              <Button 
-                type="text" 
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => onEdit(record)}
-                disabled={isDeleted}
-              />
-            </Tooltip>
-            
-            <Tooltip title="Stok Kullan (Düş)">
-              <Button 
-                type="text" 
-                size="small"
-                icon={<MinusOutlined />}
-                onClick={() => onUse(record)}
-                disabled={isDeleted || isInactive || record.current_stock <= 0}
-              />
-            </Tooltip>
-
-            <Tooltip title="Güvenli Sil">
-              <Button 
-                type="text" 
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={() => handleDeleteConfirm(record.id)}
-                disabled={isDeleted}
-              />
-            </Tooltip>
-            
-            <Dropdown menu={{ items: menuItems }} placement="bottomRight">
-              <Button type="text" size="small" icon={<MoreOutlined />} />
-            </Dropdown>
-          </Space>
+          <Dropdown menu={{ items: menuItems }} placement="bottomRight" arrow trigger={['click']}>
+            <Button 
+              type="text" 
+              shape="circle" 
+              icon={<MoreOutlined style={{ fontSize: 20 }} />} 
+            />
+          </Dropdown>
         )
       },
     },
@@ -418,33 +280,28 @@ export const StockTable: React.FC<StockTableProps> = ({
     <>
     <Table
       columns={columns}
+      scroll={{ x: 1800 }}
       dataSource={stocks}
       rowKey="id"
       loading={loading}
       pagination={{
-        pageSize: 20,
+        pageSize: 10,
         showSizeChanger: true,
-        showQuickJumper: true,
-        showTotal: (total, range) => 
-          `${range[0]}-${range[1]} / ${total} ürün`,
+        showTotal: (total) => `Toplam ${total} ürün`,
       }}
-      scroll={{ x: 1600 }}
-      size="middle"
+      size="small"
       onRow={(record) => {
-        const status = getStockStatus(record)
+        const isInactive = record.is_active === false
         return {
           style: {
-            backgroundColor: 
-              status.type === 'deleted' ? '#fff2f0' : 
-              status.type === 'inactive' ? '#fffbe6' : 
-              undefined,
-            opacity: 
-              status.type === 'deleted' ? 0.6 : 
-              status.type === 'inactive' ? 0.8 : 
-              1,
+            backgroundColor: isInactive ? '#fafafa' : '#fff',
+            cursor: 'pointer',
+            borderLeft: isInactive ? '3px solid #faad14' : 'none'
           }
         }
       }}
+      className="premium-table"
+      style={{ borderRadius: '8px', overflow: 'hidden' }}
     />
 
     {/* Gelişmiş Seçenekler Modalı */}
@@ -524,6 +381,24 @@ export const StockTable: React.FC<StockTableProps> = ({
           </Space>
         </div>
       )}
+    </Modal>
+
+    {/* Güvenli Silme Onay Modalı */}
+    <Modal
+      title="Stoku Silmek İstediğinize Emin Misiniz?"
+      open={!!deleteStockId}
+      onCancel={() => setDeleteStockId(null)}
+      okText="Evet, Sil"
+      cancelText="İptal"
+      okButtonProps={{ danger: true }}
+      onOk={() => {
+        if (deleteStockId) {
+          onDelete(deleteStockId)
+          setDeleteStockId(null)
+        }
+      }}
+    >
+      <p>Bu işlem, stok kullanım geçmişine göre ürünü ya tamamen siler ya da otomatik olarak pasife alır.</p>
     </Modal>
     </>
   )

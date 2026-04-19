@@ -25,6 +25,7 @@ import {
 import dayjs from 'dayjs'
 import { Stock } from '../types/stock.types'
 import { StockLevelBadge } from './StockLevelBadge'
+import { formatStock } from '../../../shared/utils/helpers'
 
 const { Text, Title } = Typography
 
@@ -216,10 +217,22 @@ export const StockCard: React.FC<StockCardProps> = ({
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Mevcut Miktar" span={2}>
-            {stock.has_sub_unit 
-              ? `${stock.current_stock} ${stock.unit} + ${stock.current_sub_stock} Açık ${stock.sub_unit_name} (Toplam: ${stock.total_base_units} ${stock.sub_unit_name})`
-              : `${stock.current_stock} ${stock.unit}`
-            }
+            <div>
+              <Text strong>
+                {formatStock(
+                  stock.current_stock,
+                  stock.unit,
+                  stock.has_sub_unit,
+                  stock.current_sub_stock,
+                  stock.sub_unit_name
+                )}
+              </Text>
+              {stock.has_sub_unit && (
+                <div style={{ fontSize: 11, color: '#8c8c8c' }}>
+                  Toplam: {stock.total_base_units || ((stock.current_stock * (stock.sub_unit_multiplier || 0)) + (stock.current_sub_stock || 0))} {stock.sub_unit_name}
+                </div>
+              )}
+            </div>
           </Descriptions.Item>
           <Descriptions.Item label="Minimum Miktar">
             {stock.has_sub_unit ? `${stock.min_stock_level} ${stock.sub_unit_name}` : `${stock.min_stock_level} ${stock.unit}`}

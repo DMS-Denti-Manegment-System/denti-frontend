@@ -30,7 +30,7 @@ import {
 import dayjs from 'dayjs'
 import { useStockRequests, useStockRequestStats } from '../hooks/useStockRequests'
 import { useClinics } from '@/modules/clinics/hooks/useClinics'
-import { StockRequestCard } from './StockRequestCard'
+import { StockRequestTable } from './StockRequestTable'
 import { StockRequestForm } from './StockRequestForm'
 import { StockRequestFilters, StockRequestStatus } from '../types/stockRequest.types'
 
@@ -305,17 +305,14 @@ export const StockRequestList: React.FC<StockRequestListProps> = ({
             </Empty>
           </Card>
         ) : (
-          <Row gutter={[16, 16]}>
-            {stockRequests.map(request => (
-              <Col xs={24} lg={12} xl={8} key={request.id}>
-                <StockRequestCard
-                  request={request}
-                  currentUser={currentUser}
-                  showActions={true}
-                />
-              </Col>
-            ))}
-          </Row>
+          <Card styles={{ body: { padding: 0 } }}>
+            <StockRequestTable
+              requests={stockRequests}
+              loading={isLoading}
+              currentUser={currentUser}
+              onRefresh={refetch}
+            />
+          </Card>
         )}
       </div>
 

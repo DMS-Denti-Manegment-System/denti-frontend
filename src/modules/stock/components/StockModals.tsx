@@ -1,10 +1,11 @@
 // src/modules/stock/components/StockModals.tsx
 
 import React from 'react'
-import { Modal, Form, Input, InputNumber, Select, Alert, Button, Space } from 'antd'
+import { Modal, Form, Input, InputNumber, Select, Alert, Button, Space, Radio } from 'antd'
 import type { FormInstance } from 'antd'
 import { Stock, StockAdjustmentRequest, StockUsageRequest } from '../types/stock.types'
 import { StockForm } from './StockForm'
+import { formatStock } from '../../../shared/utils/helpers'
 
 const { Option } = Select
 
@@ -84,9 +85,16 @@ export const StockModals: React.FC<StockModalsProps> = ({
           form={adjustForm}
           layout="vertical"
           onFinish={onAdjustSubmit}
+          initialValues={{ is_sub_unit: false }}
         >
           <Alert
-            message={`Mevcut Miktar: ${selectedStock?.current_stock} ${selectedStock?.unit}`}
+            message={`Mevcut Miktar: ${formatStock(
+              selectedStock?.current_stock || 0,
+              selectedStock?.unit || '',
+              selectedStock?.has_sub_unit,
+              selectedStock?.current_sub_stock,
+              selectedStock?.sub_unit_name
+            )}`}
             type="info"
             style={{ marginBottom: 16 }}
           />
@@ -109,6 +117,19 @@ export const StockModals: React.FC<StockModalsProps> = ({
               <Option value="decrease">Azalt</Option>
             </Select>
           </Form.Item>
+
+          {selectedStock?.has_sub_unit && (
+            <Form.Item
+              label="İşlem Birimi"
+              name="is_sub_unit"
+              rules={[{ required: true }]}
+            >
+              <Radio.Group>
+                <Radio value={false}>{selectedStock.unit} (Ana Birim)</Radio>
+                <Radio value={true}>{selectedStock.sub_unit_name} (Alt Birim)</Radio>
+              </Radio.Group>
+            </Form.Item>
+          )}
 
           <Form.Item
             label="Miktar"
@@ -164,7 +185,6 @@ export const StockModals: React.FC<StockModalsProps> = ({
         onCancel={onUseModalClose}
         footer={null}
         width={500}
-        
       >
         <Form
           form={useForm}
@@ -172,11 +192,14 @@ export const StockModals: React.FC<StockModalsProps> = ({
           onFinish={onUseSubmit}
         >
           <Alert
-            message={
-              selectedStock?.has_sub_unit 
-                ? `Mevcut Miktar: ${selectedStock?.current_stock} Kutu + Açık ${selectedStock?.current_sub_stock} ${selectedStock?.sub_unit_name} (Toplam: ${selectedStock?.total_base_units} ${selectedStock?.sub_unit_name})`
-                : `Mevcut Miktar: ${selectedStock?.current_stock} ${selectedStock?.unit}`
-            }
+            message={`Mevcut Miktar: ${formatStock(
+              selectedStock?.current_stock || 0,
+              selectedStock?.unit || '',
+              selectedStock?.has_sub_unit,
+              selectedStock?.current_sub_stock,
+              selectedStock?.sub_unit_name
+            )}`}
+            description={selectedStock?.has_sub_unit ? `Toplam: ${selectedStock.total_base_units} ${selectedStock.sub_unit_name}` : undefined}
             type="info"
             style={{ marginBottom: 16 }}
           />

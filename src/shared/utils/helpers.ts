@@ -35,3 +35,23 @@ export const getColorFromString = (str: string): string => {
   }
   return colors[Math.abs(hash) % colors.length]
 }
+
+/**
+ * Stok miktarını formatlar.
+ * Örn: 10 Kutu + 2 Adet veya sadece 10 Kutu
+ */
+export const formatStock = (
+  current_stock: number,
+  unit: string,
+  has_sub_unit?: boolean,
+  current_sub_stock?: number,
+  sub_unit_name?: string
+): string => {
+  const mainPart = `${current_stock} ${unit}`
+  
+  if (has_sub_unit && current_sub_stock && current_sub_stock > 0 && sub_unit_name) {
+    return `${mainPart} + ${current_sub_stock} ${sub_unit_name}`
+  }
+  
+  return mainPart
+}

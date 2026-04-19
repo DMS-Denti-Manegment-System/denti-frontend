@@ -42,6 +42,7 @@ interface StockFormValues {
   unit: string
   category: string
   current_stock: number
+  current_sub_stock?: number
   min_stock_level: number
   critical_stock_level: number
   yellow_alert_level?: number
@@ -75,37 +76,38 @@ export const StockForm: React.FC<StockFormProps> = ({
   const { suppliers, isLoading: isSuppliersLoading } = useSuppliers()
 
   // Klinikleri API'den çek
-  const { clinics, isLoading: isClinicsLoading } = useClinics({ is_active: true })
-
-  useEffect(() => {
-    if (stock) {
-      const multiplier = (stock.has_sub_unit && stock.sub_unit_multiplier) ? stock.sub_unit_multiplier : 1;
-      form.setFieldsValue({
-        name: stock.name,
-        description: stock.description,
-        brand: stock.brand,
-        unit: stock.unit,
-        category: stock.category,
-        current_stock: stock.current_stock,
-        min_stock_level: stock.min_stock_level / multiplier,
-        critical_stock_level: stock.critical_stock_level / multiplier,
-        yellow_alert_level: stock.yellow_alert_level ? (stock.yellow_alert_level / multiplier) : undefined,
-        red_alert_level: stock.red_alert_level ? (stock.red_alert_level / multiplier) : undefined,
-        purchase_price: stock.purchase_price,
-        currency: stock.currency,
-        supplier_id: stock.supplier_id,
-        clinic_id: stock.clinic_id,
-        purchase_date: stock.purchase_date ? dayjs(stock.purchase_date) : null,
-        expiry_date: stock.expiry_date ? dayjs(stock.expiry_date) : null,
-        track_expiry: stock.track_expiry,
-        track_batch: stock.track_batch,
-        storage_location: stock.storage_location,
-        is_active: stock.is_active,
-        has_sub_unit: stock.has_sub_unit,
-        sub_unit_name: stock.sub_unit_name,
-        sub_unit_multiplier: stock.sub_unit_multiplier
-      })
-    } else {
+  const { clinics, isLoading: isClinicsLoading } = useClinics()
+useEffect(() => {
+  if (stock) {
+    const multiplier = (stock.has_sub_unit && stock.sub_unit_multiplier) ? stock.sub_unit_multiplier : 1;
+    form.setFieldsValue({
+      name: stock.name,
+      description: stock.description,
+      brand: stock.brand,
+      unit: stock.unit,
+      category: stock.category,
+      current_stock: stock.current_stock,
+      current_sub_stock: stock.current_sub_stock || 0,
+      // UI'da kutu bazlı gösterim için multiplier'a bölüyoruz
+      min_stock_level: stock.min_stock_level / multiplier,
+      critical_stock_level: stock.critical_stock_level / multiplier,
+      yellow_alert_level: stock.yellow_alert_level ? (stock.yellow_alert_level / multiplier) : undefined,
+      red_alert_level: stock.red_alert_level ? (stock.red_alert_level / multiplier) : undefined,
+      purchase_price: stock.purchase_price,
+      currency: stock.currency,
+      supplier_id: stock.supplier_id,
+      clinic_id: stock.clinic_id,
+      purchase_date: stock.purchase_date ? dayjs(stock.purchase_date) : null,
+      expiry_date: stock.expiry_date ? dayjs(stock.expiry_date) : null,
+      track_expiry: stock.track_expiry,
+      track_batch: stock.track_batch,
+      storage_location: stock.storage_location,
+      is_active: stock.is_active,
+      has_sub_unit: stock.has_sub_unit,
+      sub_unit_name: stock.sub_unit_name,
+      sub_unit_multiplier: stock.sub_unit_multiplier
+    })
+  } else {
       // Yeni stok için default değerler
       form.setFieldsValue({
         currency: 'TRY',
@@ -120,39 +122,39 @@ export const StockForm: React.FC<StockFormProps> = ({
       })
     }
   }, [stock, form])
+const onFinish = async (values: StockFormValues) => {
+  try {
+    const multiplier = (values.has_sub_unit && values.sub_unit_multiplier) ? values.sub_unit_multiplier : 1;
 
-  const onFinish = async (values: StockFormValues) => {
-    try {
-      const multiplier = (values.has_sub_unit && values.sub_unit_multiplier) ? values.sub_unit_multiplier : 1;
+    const formData: CreateStockRequest = {
+      name: values.name,
+      description: values.description,
+      brand: values.brand,
+      unit: values.unit,
+      category: values.category,
+      current_stock: values.current_stock,
+      current_sub_stock: values.has_sub_unit ? (values.current_sub_stock || 0) : 0,
+      // Backend'e Base Unit (Toplam Adet) cinsinden çarparak gönderiyoruz
+      min_stock_level: values.min_stock_level * multiplier,
+      critical_stock_level: values.critical_stock_level * multiplier,
+      yellow_alert_level: (values.yellow_alert_level || values.min_stock_level) * multiplier,
+      red_alert_level: (values.red_alert_level || values.critical_stock_level) * multiplier,
+      purchase_price: values.purchase_price,
+      currency: values.currency || 'TRY',
+      supplier_id: values.supplier_id,
+      clinic_id: values.clinic_id,
+      purchase_date: values.purchase_date?.format('YYYY-MM-DD') || dayjs().format('YYYY-MM-DD'),
+      expiry_date: values.expiry_date?.format('YYYY-MM-DD'),
+      track_expiry: values.track_expiry,
+      track_batch: values.track_batch,
+      storage_location: values.storage_location,
+      is_active: values.is_active,
+      has_sub_unit: values.has_sub_unit,
+      sub_unit_name: values.has_sub_unit ? values.sub_unit_name : undefined,
+      sub_unit_multiplier: values.has_sub_unit ? values.sub_unit_multiplier : undefined
+    }
 
-      const formData: CreateStockRequest = {
-        name: values.name,
-        description: values.description,
-        brand: values.brand,
-        unit: values.unit,
-        category: values.category,
-        current_stock: values.current_stock,
-        // Alarm seviyelerini alt birim çarpanı ile çarparak gönderiyoruz (Base Units)
-        min_stock_level: values.min_stock_level * multiplier,
-        critical_stock_level: values.critical_stock_level * multiplier,
-        yellow_alert_level: (values.yellow_alert_level || values.min_stock_level) * multiplier,
-        red_alert_level: (values.red_alert_level || values.critical_stock_level) * multiplier,
-        purchase_price: values.purchase_price,
-        currency: values.currency || 'TRY',
-        supplier_id: values.supplier_id,
-        clinic_id: values.clinic_id,
-        purchase_date: values.purchase_date?.format('YYYY-MM-DD') || dayjs().format('YYYY-MM-DD'),
-        expiry_date: values.expiry_date?.format('YYYY-MM-DD'),
-        track_expiry: values.track_expiry,
-        track_batch: values.track_batch,
-        storage_location: values.storage_location,
-        is_active: values.is_active,
-        has_sub_unit: values.has_sub_unit,
-        sub_unit_name: values.has_sub_unit ? values.sub_unit_name : undefined,
-        sub_unit_multiplier: values.has_sub_unit ? values.sub_unit_multiplier : undefined
-      }
-
-      console.log('📝 Form Data to Send:', formData)
+    console.log('📝 Form Data to Send:', formData)
 
       if (stock) {
         await updateStock({ id: stock.id, data: formData })
@@ -328,9 +330,9 @@ export const StockForm: React.FC<StockFormProps> = ({
       </Row>
 
       <Row gutter={16}>
-        <Col span={8}>
+        <Col span={hasSubUnit ? 6 : 8}>
           <Form.Item
-            label={`Mevcut Stok ${hasSubUnit ? '(Kapalı Kutu Sayısı)' : ''}`}
+            label={`Mevcut Stok ${hasSubUnit ? '(Kapalı Kutu)' : ''}`}
             name="current_stock"
             rules={[{ required: true, message: 'Mevcut stok gereklidir!' }]}
           >
@@ -342,11 +344,29 @@ export const StockForm: React.FC<StockFormProps> = ({
           </Form.Item>
         </Col>
 
-        <Col span={8}>
+        {hasSubUnit && (
+          <Col span={6}>
+            <Form.Item
+              label={`Açık Kutudan Kalan (${form.getFieldValue('sub_unit_name') || 'Alt Birim'})`}
+              name="current_sub_stock"
+              tooltip="Şu an halihazırda açılmış ve içinden bir miktar kullanılmış olan ana birimin içindeki kalan miktar."
+            >
+              <InputNumber 
+                min={0}
+                max={(form.getFieldValue('sub_unit_multiplier') || 2) - 1}
+                style={{ width: '100%' }}
+                placeholder="0"
+              />
+            </Form.Item>
+          </Col>
+        )}
+
+        <Col span={hasSubUnit ? 6 : 8}>
           <Form.Item
-            label="Minimum Stok (Sarı Alarm)"
+            label="Minimum Stok"
             name="min_stock_level"
             rules={[{ required: true, message: 'Minimum stok gereklidir!' }]}
+            tooltip={hasSubUnit ? "Bu değer Toplam Alt Birim cinsinden takip edilir." : ""}
           >
             <InputNumber 
               min={1} 
@@ -356,11 +376,12 @@ export const StockForm: React.FC<StockFormProps> = ({
           </Form.Item>
         </Col>
 
-        <Col span={8}>
+        <Col span={hasSubUnit ? 6 : 8}>
           <Form.Item
-            label="Kritik Stok (Kırmızı Alarm)"
+            label="Kritik Stok"
             name="critical_stock_level"
             rules={[{ required: true, message: 'Kritik stok gereklidir!' }]}
+            tooltip={hasSubUnit ? "Bu değer Toplam Alt Birim cinsinden takip edilir." : ""}
           >
             <InputNumber 
               min={1} 
@@ -480,7 +501,7 @@ export const StockForm: React.FC<StockFormProps> = ({
               loading={isClinicsLoading}
               notFoundContent={isClinicsLoading ? 'Yükleniyor...' : 'Klinik bulunamadı'}
             >
-              {(clinics ?? []).filter(c => c.is_active).map((clinic) => (
+              {(clinics ?? []).map((clinic) => (
                 <Option key={clinic.id} value={clinic.id}>
                   {clinic.name} ({clinic.code})
                 </Option>

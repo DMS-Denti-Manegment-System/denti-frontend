@@ -45,49 +45,67 @@ export const StockList: React.FC = () => {
     isReactivating        // ✅ YENİ Loading state
   } = useStocks(filters)
 
+  // Silinen ürünleri gizle (Backend silinse bile history için veritabanında tutuyor)
+  const activeStocks = useMemo(() => {
+    if (!stocks) return []
+    return stocks.filter(s => s.status !== 'deleted')
+  }, [stocks])
+
   // Computed data (manual calculations since hooks are disabled)
   const stockStats = useMemo(() => {
-    if (!stocks) return null
+    if (!activeStocks) return null
     
     const today = new Date()
     const thirtyDaysFromNow = new Date()
     thirtyDaysFromNow.setDate(today.getDate() + 30)
 
     return {
-      total_items: stocks.length,
-      low_stock_items: stocks.filter(s => s.current_stock <= s.min_stock_level).length,
-      critical_stock_items: stocks.filter(s => s.current_stock <= s.critical_stock_level).length,
-      expiring_items: stocks.filter(s => {
+      total_items: activeStocks.length,
+      low_stock_items: activeStocks.filter(s => {
+        const currentAmount = s.has_sub_unit ? (s.total_base_units || (s.current_stock * (s.sub_unit_multiplier || 1) + (s.current_sub_stock || 0))) : s.current_stock;
+        return currentAmount <= s.min_stock_level;
+      }).length,
+      critical_stock_items: activeStocks.filter(s => {
+        const currentAmount = s.has_sub_unit ? (s.total_base_units || (s.current_stock * (s.sub_unit_multiplier || 1) + (s.current_sub_stock || 0))) : s.current_stock;
+        return currentAmount <= s.critical_stock_level;
+      }).length,
+      expiring_items: activeStocks.filter(s => {
         if (!s.expiry_date) return false
         const expiryDate = new Date(s.expiry_date)
         return expiryDate <= thirtyDaysFromNow && expiryDate >= today
       }).length,
-      total_value: stocks.reduce((sum, s) => sum + (s.purchase_price * s.current_stock), 0)
+      total_value: activeStocks.reduce((sum, s) => sum + (s.purchase_price * s.current_stock), 0)
     }
-  }, [stocks])
+  }, [activeStocks])
 
   const lowStockItems = useMemo(() => {
-    if (!stocks) return []
-    return stocks.filter(s => s.current_stock <= s.min_stock_level)
-  }, [stocks])
+    if (!activeStocks) return []
+    return activeStocks.filter(s => {
+      const currentAmount = s.has_sub_unit ? (s.total_base_units || (s.current_stock * (s.sub_unit_multiplier || 1) + (s.current_sub_stock || 0))) : s.current_stock;
+      return currentAmount <= s.min_stock_level;
+    })
+  }, [activeStocks])
 
   const criticalStockItems = useMemo(() => {
-    if (!stocks) return []
-    return stocks.filter(s => s.current_stock <= s.critical_stock_level)
-  }, [stocks])
+    if (!activeStocks) return []
+    return activeStocks.filter(s => {
+      const currentAmount = s.has_sub_unit ? (s.total_base_units || (s.current_stock * (s.sub_unit_multiplier || 1) + (s.current_sub_stock || 0))) : s.current_stock;
+      return currentAmount <= s.critical_stock_level;
+    })
+  }, [activeStocks])
 
   const expiringItems = useMemo(() => {
-    if (!stocks) return []
+    if (!activeStocks) return []
     const today = new Date()
     const thirtyDaysFromNow = new Date()
     thirtyDaysFromNow.setDate(today.getDate() + 30)
     
-    return stocks.filter(s => {
+    return activeStocks.filter(s => {
       if (!s.expiry_date) return false
       const expiryDate = new Date(s.expiry_date)
       return expiryDate <= thirtyDaysFromNow && expiryDate >= today
     })
-  }, [stocks])
+  }, [activeStocks])
 
   // Event handlers
   const handleSearch = useCallback((value: string) => {
@@ -212,9 +230,9 @@ export const StockList: React.FC = () => {
         onRefresh={refetch}
       />
 
-      <Card>
+      <Card styles={{ body: { padding: 0 } }}>
         <StockTable 
-          stocks={stocks || []}
+          stocks={activeStocks}
           loading={isLoading || isSoftDeleting || isHardDeleting || isReactivating}
           onEdit={handleEdit}
           onDelete={handleDelete}

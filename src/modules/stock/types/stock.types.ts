@@ -77,6 +77,7 @@ export interface CreateStockRequest {
   
   // Backend alan adları ile uyumlu
   current_stock: number
+  current_sub_stock?: number
   min_stock_level: number
   critical_stock_level: number
   yellow_alert_level?: number
@@ -107,6 +108,8 @@ export interface UpdateStockRequest {
   brand?: string
   unit?: string
   category?: string
+  current_stock?: number
+  current_sub_stock?: number
   min_stock_level?: number
   critical_stock_level?: number
   yellow_alert_level?: number
@@ -129,6 +132,7 @@ export interface UpdateStockRequest {
 export interface StockAdjustmentRequest {
   type: 'increase' | 'decrease'
   quantity: number
+  is_sub_unit: boolean
   reason: string
   notes?: string
   performed_by: string
