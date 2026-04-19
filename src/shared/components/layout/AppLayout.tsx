@@ -82,6 +82,15 @@ export const AppLayout: React.FC = () => {
       icon: <BarChartOutlined />,
       label: 'Raporlar',
       onClick: () => navigate('/reports')
+    },
+    {
+      type: 'divider' as const,
+    },
+    {
+      key: '/admin/companies',
+      icon: <SettingOutlined />,
+      label: 'Şirket Yönetimi',
+      onClick: () => navigate('/admin/companies')
     }
   ]
 
