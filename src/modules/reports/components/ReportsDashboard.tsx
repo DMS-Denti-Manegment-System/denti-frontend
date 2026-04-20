@@ -12,7 +12,8 @@ import {
   Alert,
   Badge,
   Tooltip,
-  Divider
+  Divider,
+  Skeleton
 } from 'antd'
 import { 
   BarChartOutlined,
@@ -74,12 +75,14 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
 
   const { 
     data: stockReports, 
+    isLoading: stockLoading,
     error: stockError,
     refetch: refetchStock 
   } = useAllStockReports(filters)
 
   const { 
-    data: stockSummary 
+    data: stockSummary,
+    isLoading: summaryLoading
   } = useStockStatusSummary(filters)
 
   const { 
@@ -196,13 +199,15 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
         {stats.map((stat, index) => (
           <Col xs={12} sm={6} key={index}>
             <Card size="small">
-              <Statistic
-                title={stat.title}
-                value={stat.value}
-                suffix={stat.suffix}
-                prefix={stat.icon}
-                valueStyle={{ color: stat.color, fontSize: compactMode ? '20px' : '24px' }}
-              />
+              <Skeleton loading={summaryLoading} active avatar={false} paragraph={{ rows: 1 }}>
+                <Statistic
+                  title={stat.title}
+                  value={stat.value}
+                  suffix={stat.suffix}
+                  prefix={stat.icon}
+                  valueStyle={{ color: stat.color, fontSize: compactMode ? '20px' : '24px' }}
+                />
+              </Skeleton>
             </Card>
           </Col>
         ))}
@@ -264,24 +269,26 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
 
         {/* Filter Summary */}
         <Divider style={{ margin: '16px 0 8px 0' }} />
-        <Space split={<Divider type="vertical" />}>
-          <span>
-            <InfoCircleOutlined style={{ marginRight: 4 }} />
-            <strong>Tarih:</strong> {filterSummary.dateRange}
-          </span>
-          <span>
-            <strong>Klinik:</strong> {filterSummary.clinicText}
-          </span>
-          <span>
-            <strong>Sağlık Oranı:</strong>{' '}
-            <span style={{ 
-              color: dashboardStats.healthPercentage > 80 ? '#52c41a' : 
-                     dashboardStats.healthPercentage > 60 ? '#faad14' : '#f5222d' 
-            }}>
-              %{dashboardStats.healthPercentage}
+        <Skeleton loading={summaryLoading} active paragraph={{ rows: 1 }} title={false}>
+          <Space split={<Divider type="vertical" />}>
+            <span>
+              <InfoCircleOutlined style={{ marginRight: 4 }} />
+              <strong>Tarih:</strong> {filterSummary.dateRange}
             </span>
-          </span>
-        </Space>
+            <span>
+              <strong>Klinik:</strong> {filterSummary.clinicText}
+            </span>
+            <span>
+              <strong>Sağlık Oranı:</strong>{' '}
+              <span style={{ 
+                color: dashboardStats.healthPercentage > 80 ? '#52c41a' : 
+                       dashboardStats.healthPercentage > 60 ? '#faad14' : '#f5222d' 
+              }}>
+                %{dashboardStats.healthPercentage}
+              </span>
+            </span>
+          </Space>
+        </Skeleton>
       </Card>
     )
   }
@@ -321,44 +328,46 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
       </Col>
       <Col span={24}>
         <Card title="Stok Seviye Analizi" size="small">
-          {stockReports ? (
-            <Row gutter={[16, 16]}>
-              <Col xs={12} sm={6}>
-                <Statistic
-                  title="Normal Seviye"
-                  value={stockReports.levels?.summary?.normal || 0}
-                  suffix="kalem"
-                  valueStyle={{ color: '#52c41a' }}
-                />
-              </Col>
-              <Col xs={12} sm={6}>
-                <Statistic
-                  title="Düşük Seviye"
-                  value={stockReports.levels?.summary?.low || 0}
-                  suffix="kalem"
-                  valueStyle={{ color: '#faad14' }}
-                />
-              </Col>
-              <Col xs={12} sm={6}>
-                <Statistic
-                  title="Kritik Seviye"
-                  value={stockReports.levels?.summary?.critical || 0}
-                  suffix="kalem"
-                  valueStyle={{ color: '#f5222d' }}
-                />
-              </Col>
-              <Col xs={12} sm={6}>
-                <Statistic
-                  title="Toplam Hareket"
-                  value={stockReports.movements?.totalMovements || 0}
-                  suffix="hareket"
-                  valueStyle={{ color: '#1890ff' }}
-                />
-              </Col>
-            </Row>
-          ) : (
-            <Alert message="Stok verileri yükleniyor..." type="info" />
-          )}
+          <Skeleton loading={stockLoading} active paragraph={{ rows: 1 }}>
+            {stockReports ? (
+              <Row gutter={[16, 16]}>
+                <Col xs={12} sm={6}>
+                  <Statistic
+                    title="Normal Seviye"
+                    value={stockReports.levels?.summary?.normal || 0}
+                    suffix="kalem"
+                    valueStyle={{ color: '#52c41a' }}
+                  />
+                </Col>
+                <Col xs={12} sm={6}>
+                  <Statistic
+                    title="Düşük Seviye"
+                    value={stockReports.levels?.summary?.low || 0}
+                    suffix="kalem"
+                    valueStyle={{ color: '#faad14' }}
+                  />
+                </Col>
+                <Col xs={12} sm={6}>
+                  <Statistic
+                    title="Kritik Seviye"
+                    value={stockReports.levels?.summary?.critical || 0}
+                    suffix="kalem"
+                    valueStyle={{ color: '#f5222d' }}
+                  />
+                </Col>
+                <Col xs={12} sm={6}>
+                  <Statistic
+                    title="Toplam Hareket"
+                    value={stockReports.movements?.totalMovements || 0}
+                    suffix="hareket"
+                    valueStyle={{ color: '#1890ff' }}
+                  />
+                </Col>
+              </Row>
+            ) : (
+              <Alert message="Veri bulunamadı." type="info" />
+            )}
+          </Skeleton>
         </Card>
       </Col>
     </Row>
@@ -399,52 +408,56 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
         />
       </Col>
       <Col xs={24} lg={12}>
-        <Card title="Tedarikçi Özeti" size="small" loading={supplierLoading}>
-          {supplierStats && (
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Statistic
-                title="Toplam Tedarikçi"
-                value={supplierStats.totalSuppliers || 0}
-                suffix="firma"
-              />
-              <Statistic
-                title="Ortalama Kalite"
-                value={supplierStats.avgQualityRating || 0}
-                suffix="/5"
-                precision={1}
-              />
-              <Statistic
-                title="Ortalama Teslimat"
-                value={supplierStats.avgDeliveryTime || 0}
-                suffix="gün"
-                precision={1}
-              />
-            </Space>
-          )}
+        <Card title="Tedarikçi Özeti" size="small">
+          <Skeleton loading={supplierLoading} active paragraph={{ rows: 3 }}>
+            {supplierStats && (
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Statistic
+                  title="Toplam Tedarikçi"
+                  value={supplierStats.totalSuppliers || 0}
+                  suffix="firma"
+                />
+                <Statistic
+                  title="Ortalama Kalite"
+                  value={supplierStats.avgQualityRating || 0}
+                  suffix="/5"
+                  precision={1}
+                />
+                <Statistic
+                  title="Ortalama Teslimat"
+                  value={supplierStats.avgDeliveryTime || 0}
+                  suffix="gün"
+                  precision={1}
+                />
+              </Space>
+            )}
+          </Skeleton>
         </Card>
       </Col>
       <Col xs={24} lg={12}>
-        <Card title="Klinik Özeti" size="small" loading={clinicLoading}>
-          {clinicStats && (
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Statistic
-                title="Toplam Klinik"
-                value={clinicStats.totalClinics || 0}
-                suffix="klinik"
-              />
-              <Statistic
-                title="Toplam Tüketim"
-                value={clinicStats.totalConsumption || 0}
-                suffix="adet"
-              />
-              <Statistic
-                title="Ortalama Verimlilik"
-                value={clinicStats.avgEfficiency || 0}
-                suffix="%"
-                precision={1}
-              />
-            </Space>
-          )}
+        <Card title="Klinik Özeti" size="small">
+          <Skeleton loading={clinicLoading} active paragraph={{ rows: 3 }}>
+            {clinicStats && (
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Statistic
+                  title="Toplam Klinik"
+                  value={clinicStats.totalClinics || 0}
+                  suffix="klinik"
+                />
+                <Statistic
+                  title="Toplam Tüketim"
+                  value={clinicStats.totalConsumption || 0}
+                  suffix="adet"
+                />
+                <Statistic
+                  title="Ortalama Verimlilik"
+                  value={clinicStats.avgEfficiency || 0}
+                  suffix="%"
+                  precision={1}
+                />
+              </Space>
+            )}
+          </Skeleton>
         </Card>
       </Col>
     </Row>
@@ -454,6 +467,7 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
   // RENDER
   // =============================================================================
 
+  // Error boundary handles errors now, but we keep this as secondary fallback
   if (stockError) {
     return (
       <Alert
@@ -504,7 +518,7 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
           activeKey={activeTab} 
           onChange={setActiveTab}
           type="card"
-          size={compactMode ? 'small' : 'large'} // ✅ FIXED: 'default' -> 'large'
+          size={compactMode ? 'small' : 'large'}
           items={[
             {
               key: 'overview',
