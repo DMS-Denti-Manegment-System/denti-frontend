@@ -15,6 +15,7 @@ import { ReportsPage } from '../modules/reports/pages/ReportsPage'
 import { CompanyManagementPage } from '../modules/admin/pages/CompanyManagementPage'
 import { UserManagementPage } from '../modules/users/pages/UserManagementPage'
 import { RolesPage } from '../modules/roles/pages/RolesPage'
+import { ProfilePage } from '../modules/profile/pages/ProfilePage'
 
 
 const router = createBrowserRouter([
@@ -69,6 +70,10 @@ const router = createBrowserRouter([
       {
         path: 'roles',
         element: <RolesPage />
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />
       },
       {
         path: 'admin/companies',
