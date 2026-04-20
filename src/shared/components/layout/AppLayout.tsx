@@ -15,11 +15,13 @@ import {
   LogoutOutlined,
   SettingOutlined,
   SafetyCertificateOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import type { MenuProps } from 'antd'
 import { usePendingAlertCount } from '@/modules/alerts/hooks/useAlerts'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
+import { usePermissions } from '@/shared/hooks/usePermissions'
 
 const { Header, Sider, Content } = Layout
 const { Title } = Typography
@@ -30,6 +32,7 @@ export const AppLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { isSuperAdmin, isCompanyOwner } = usePermissions()
   
   // Bekleyen uyarı sayısını çek (API çağrısı yapacak, 30 saniyede bir güncelleyecek)
   const { data: pendingAlertCount } = usePendingAlertCount()
@@ -37,6 +40,8 @@ export const AppLayout: React.FC = () => {
   const handleUserMenuClick: MenuProps['onClick'] = ({ key }) => {
     if (key === 'logout') {
       logout().then(() => navigate('/login'))
+    } else if (key === 'profile') {
+      navigate('/profile')
     }
   }
 
@@ -84,8 +89,8 @@ export const AppLayout: React.FC = () => {
       label: 'Raporlar',
       onClick: () => navigate('/reports')
     },
-    // Yönetim Alt Menüsü - Sadece yetkili kullanıcılara (Örn: Company Owner) gösterilir
-    ...(user?.roles?.some(r => r.name === 'Company Owner') ? [
+    // Yönetim Alt Menüsü - Sadece Company Owner role sahip kullanıcılara gösterilir
+    ...(isCompanyOwner() ? [
       {
         key: 'management',
         icon: <SettingOutlined />,
@@ -106,15 +111,18 @@ export const AppLayout: React.FC = () => {
         ]
       }
     ] : []),
-    {
-      type: 'divider' as const,
-    },
-    {
-      key: '/admin/companies',
-      icon: <SettingOutlined />,
-      label: 'Şirket Yönetimi',
-      onClick: () => navigate('/admin/companies')
-    }
+    // Şirket Yönetimi - Sadece Super Admin role sahip kullanıcılara gösterilir
+    ...(isSuperAdmin() ? [
+      {
+        type: 'divider' as const,
+      },
+      {
+        key: '/admin/companies',
+        icon: <AppstoreOutlined />,
+        label: 'Şirketler (Admin)',
+        onClick: () => navigate('/admin/companies')
+      }
+    ] : [])
   ]
 
   const userMenuItems: MenuProps['items'] = [

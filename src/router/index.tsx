@@ -4,6 +4,7 @@ import React from 'react'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AppLayout } from '../shared/components/layout/AppLayout'
 import { ProtectedRoute } from './ProtectedRoute'
+import { RoleProtectedRoute } from './RoleProtectedRoute'
 import { LoginPage } from '../modules/auth/pages/LoginPage'
 import { AcceptInvitationPage } from '../modules/auth/pages/AcceptInvitationPage' 
 import { StocksPage } from '../modules/stock/pages/StocksPage'
@@ -65,11 +66,19 @@ const router = createBrowserRouter([
       },
       {
         path: 'employees',
-        element: <UserManagementPage />
+        element: (
+          <RoleProtectedRoute roles={['Company Owner']}>
+            <UserManagementPage />
+          </RoleProtectedRoute>
+        )
       },
       {
         path: 'roles',
-        element: <RolesPage />
+        element: (
+          <RoleProtectedRoute roles={['Company Owner']}>
+            <RolesPage />
+          </RoleProtectedRoute>
+        )
       },
       {
         path: 'profile',
@@ -77,7 +86,11 @@ const router = createBrowserRouter([
       },
       {
         path: 'admin/companies',
-        element: <CompanyManagementPage />
+        element: (
+          <RoleProtectedRoute roles={['Super Admin']}>
+            <CompanyManagementPage />
+          </RoleProtectedRoute>
+        )
       }
     ]
   },
