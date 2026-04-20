@@ -16,6 +16,7 @@ import {
   SettingOutlined,
   SafetyCertificateOutlined,
   AppstoreOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import type { MenuProps } from 'antd'
@@ -46,6 +47,12 @@ export const AppLayout: React.FC = () => {
   }
 
   const menuItems: MenuProps['items'] = [
+    {
+      key: '/',
+      icon: <DashboardOutlined />,
+      label: 'Ana Sayfa',
+      onClick: () => navigate('/')
+    },
     {
       key: '/stocks',
       icon: <ShoppingCartOutlined />,

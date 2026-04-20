@@ -15,7 +15,7 @@ export const LoginForm: React.FC = () => {
   const onFinish = async (values: any) => {
     const success = await login(values);
     if (success) {
-      navigate('/stocks');
+      navigate('/');
     }
   };
 

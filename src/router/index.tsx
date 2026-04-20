@@ -38,7 +38,7 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/stocks" replace />
+        element: <ReportsPage />
       },
       {
         path: 'stocks',
@@ -96,7 +96,7 @@ const router = createBrowserRouter([
   },
   {
     path: '*',
-    element: <Navigate to="/stocks" replace />
+    element: <Navigate to="/" replace />
   }
 ])
 
