@@ -94,7 +94,7 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
           <Form.Item name="permissions">
             <Checkbox.Group style={{ width: '100%' }}>
               <Row gutter={[16, 16]}>
-                {permissionGroups.map((group) => {
+                {Array.isArray(permissionGroups) && permissionGroups.map((group) => {
                   const groupPermNames = group.permissions.map(p => p.name);
                   
                   return (

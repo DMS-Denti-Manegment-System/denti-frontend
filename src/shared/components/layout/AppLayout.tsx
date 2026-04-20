@@ -14,6 +14,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   SettingOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import type { MenuProps } from 'antd'
@@ -55,7 +56,7 @@ export const AppLayout: React.FC = () => {
     {
       key: '/clinics',
       icon: <BankOutlined />,
-      label: 'Kliniklers', 
+      label: 'Klinikler', 
       onClick: () => navigate('/clinics')
     },
     {
@@ -83,6 +84,28 @@ export const AppLayout: React.FC = () => {
       label: 'Raporlar',
       onClick: () => navigate('/reports')
     },
+    // Yönetim Alt Menüsü - Sadece yetkili kullanıcılara (Örn: Company Owner) gösterilir
+    ...(user?.roles?.some(r => r.name === 'Company Owner') ? [
+      {
+        key: 'management',
+        icon: <SettingOutlined />,
+        label: 'Yönetim',
+        children: [
+          {
+            key: '/employees',
+            icon: <TeamOutlined />,
+            label: 'Personel Yönetimi',
+            onClick: () => navigate('/employees')
+          },
+          {
+            key: '/roles',
+            icon: <SafetyCertificateOutlined />,
+            label: 'Rol ve Yetkiler',
+            onClick: () => navigate('/roles')
+          }
+        ]
+      }
+    ] : []),
     {
       type: 'divider' as const,
     },

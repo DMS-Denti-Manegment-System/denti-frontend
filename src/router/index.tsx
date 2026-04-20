@@ -13,6 +13,8 @@ import { StockRequestsPage } from '@/modules/stockRequest/pages/StockRequestsPag
 import { AlertsPage } from '@/modules/alerts/pages/AlertsPage'
 import { ReportsPage } from '../modules/reports/pages/ReportsPage'
 import { CompanyManagementPage } from '../modules/admin/pages/CompanyManagementPage'
+import { UserManagementPage } from '../modules/users/pages/UserManagementPage'
+import { RolesPage } from '../modules/roles/pages/RolesPage'
 
 
 const router = createBrowserRouter([
@@ -59,6 +61,14 @@ const router = createBrowserRouter([
       {
         path: 'reports',
         element: <ReportsPage />
+      },
+      {
+        path: 'employees',
+        element: <UserManagementPage />
+      },
+      {
+        path: 'roles',
+        element: <RolesPage />
       },
       {
         path: 'admin/companies',
