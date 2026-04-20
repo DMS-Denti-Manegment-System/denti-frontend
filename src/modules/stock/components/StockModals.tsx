@@ -79,7 +79,7 @@ export const StockModals: React.FC<StockModalsProps> = ({
         onCancel={onAdjustModalClose}
         footer={null}
         width={500}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={adjustForm}

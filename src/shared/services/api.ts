@@ -19,10 +19,10 @@ export const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     // CSRF protection for state-changing requests (except GET)
-    // Sanctum sets a XSRF-TOKEN cookie, axios reads it automatically
-    // but sometimes you need to fetch it first if it doesn't exist.
     if (config.method !== 'get' && !document.cookie.includes('XSRF-TOKEN')) {
-      await axios.get('http://localhost:8000/sanctum/csrf-cookie', { withCredentials: true });
+      const baseUrl = config.baseURL || '';
+      const domain = baseUrl.replace('/api', '');
+      await axios.get(`${domain}/sanctum/csrf-cookie`, { withCredentials: true });
     }
     return config
   },
