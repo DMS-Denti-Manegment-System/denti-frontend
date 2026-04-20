@@ -63,7 +63,7 @@ export const StockModals: React.FC<StockModalsProps> = ({
         onCancel={onFormModalClose}
         footer={null}
         width={800}
-        destroyOnClose
+        
       >
         <StockForm 
           stock={editingStock || undefined}
