@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useAuthStore } from '../../../shared/stores/authStore';
 import { authApi } from '../services/authApi';
-import { LoginCredentials } from '../types/auth.types';
+import { LoginCredentials, TwoFactorPayload } from '../types/auth.types';
 import { App } from 'antd';
 
 export const useAuth = () => {
@@ -15,15 +15,38 @@ export const useAuth = () => {
     setLoading(true);
     try {
       const response = await authApi.login(credentials);
+      
+      // Handle 2FA requirement
+      if (response.requires_2fa) {
+        return { requires2fa: true };
+      }
+
       if (response.success && response.data) {
-        setAuth(response.data.user, response.data.token);
+        setAuth(response.data.user);
         message.success('Giriş başarılı! Hoş geldiniz.');
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error: any) {
+      console.error('Login error:', error);
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verify2fa = async (data: TwoFactorPayload) => {
+    setLoading(true);
+    try {
+      const response = await authApi.verify2fa(data);
+      if (response.success && response.data) {
+        setAuth(response.data.user);
+        message.success('2FA doğrulaması başarılı! Hoş geldiniz.');
         return true;
       }
       return false;
     } catch (error: any) {
-      console.error('Login error:', error);
-      // Errors are handled in api interceptor
+      console.error('2FA verification error:', error);
       return false;
     } finally {
       setLoading(false);
@@ -42,22 +65,22 @@ export const useAuth = () => {
   };
 
   const checkSession = useCallback(async () => {
-    if (!isAuthenticated) return;
-    
+    // We can check session status even if locally marked as authenticated
     try {
       const response = await authApi.me();
-      if (response.success) {
-        // Token is still valid
+      if (response.success && response.data) {
+        setAuth(response.data.user);
       }
     } catch (error: any) {
       if (error.response?.status === 401) {
         storeLogout();
       }
     }
-  }, [isAuthenticated, storeLogout]);
+  }, [setAuth, storeLogout]);
 
   return {
     login,
+    verify2fa,
     logout,
     checkSession,
     loading,

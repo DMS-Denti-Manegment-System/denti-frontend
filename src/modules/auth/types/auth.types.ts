@@ -21,16 +21,20 @@ export interface User {
 export interface AuthResponse {
   success: boolean;
   message: string;
-  data: {
+  requires_2fa?: boolean; // 2FA requirement flag
+  data?: {
     user: User;
-    token: string;
-    token_type: string;
+    // Token is no longer returned in body, but in secure cookies.
   };
 }
 
 export interface LoginCredentials {
   email: string;
-  password?: string; // Şimdilik opsiyonel, bazı sistemler sadece email ile başlayabilir
+  password?: string;
+}
+
+export interface TwoFactorPayload {
+  code: string;
 }
 
 export interface AcceptInvitationPayload {

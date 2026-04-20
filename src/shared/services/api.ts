@@ -2,26 +2,27 @@
 
 import axios from 'axios'
 import { antdHelper } from '../utils/antdHelper'
-import { useAuthStore } from '../stores/authStore'
 
 // API instance oluştur
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  withCredentials: true, // Cookies handle the session (Sanctum)
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
   },
   timeout: 10000,
 })
 
-// Request Interceptor - Token ekleme
+// Request Interceptor
 api.interceptors.request.use(
-  (config) => {
-    // Store'dan doğrudan token'ı al (En güvenli yol)
-    const token = useAuthStore.getState().token
-
-    if (token && token !== 'null' && token !== 'undefined') {
-      config.headers.Authorization = `Bearer ${token}`
+  async (config) => {
+    // CSRF protection for state-changing requests (except GET)
+    // Sanctum sets a XSRF-TOKEN cookie, axios reads it automatically
+    // but sometimes you need to fetch it first if it doesn't exist.
+    if (config.method !== 'get' && !document.cookie.includes('XSRF-TOKEN')) {
+      await axios.get('http://localhost:8000/sanctum/csrf-cookie', { withCredentials: true });
     }
     return config
   },
@@ -44,6 +45,9 @@ api.interceptors.response.use(
     } else if (error.response?.status === 404) {
       // Background checks (like /user or /stats) might fail with 404 on some setups
       console.warn('404 Error:', error.config.url)
+    } else if (error.response?.status === 419) {
+      // 419 is often used for CSRF mismatch in Laravel
+      antdHelper.message?.error('CSRF hatası, lütfen sayfayı yenileyin.')
     } else if (error.response?.status === 422) {
       // Validation errors
       const errors = error.response.data?.errors

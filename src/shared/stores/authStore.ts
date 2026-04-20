@@ -6,9 +6,8 @@ import { User } from '../../modules/auth/types/auth.types';
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
 }
@@ -17,15 +16,14 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
       isAuthenticated: false,
       
-      setAuth: (user, token) => {
-        set({ user, token, isAuthenticated: true });
+      setAuth: (user) => {
+        set({ user, isAuthenticated: true });
       },
 
       logout: () => {
-        set({ user: null, token: null, isAuthenticated: false });
+        set({ user: null, isAuthenticated: false });
       },
       
       updateUser: (updatedUser) => {
@@ -37,7 +35,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'denti-auth-storage',
       storage: createJSONStorage(() => localStorage),
-      // We persist everything for now to make it easy
+      // We only persist the user info, cookies handle the session.
     }
   )
 );

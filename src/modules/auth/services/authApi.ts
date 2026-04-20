@@ -1,17 +1,18 @@
 // src/modules/auth/services/authApi.ts
 
 import { api } from '../../../shared/services/api';
-import { AuthResponse, LoginCredentials, AcceptInvitationPayload } from '../types/auth.types';
+import { AuthResponse, LoginCredentials, AcceptInvitationPayload, TwoFactorPayload } from '../types/auth.types';
 
 export const authApi = {
   login: (credentials: LoginCredentials): Promise<AuthResponse> => 
     api.post('/login', credentials),
-    
-  // Endpoint düzeltildi: /auth/logout
+
+  verify2fa: (data: TwoFactorPayload): Promise<AuthResponse> =>
+    api.post('/2fa/verify', data),
+
   logout: (): Promise<{ success: boolean; message: string }> => 
     api.post('/auth/logout'),
-    
-  // Endpoint düzeltildi: /auth/me
+
   me: (): Promise<AuthResponse> => 
     api.get('/auth/me'),
 
