@@ -2,7 +2,7 @@
 
 import { api } from '../../../shared/services/api';
 import { ApiResponse } from '../../../shared/types/common.types';
-import { User, UpdateUserPayload } from '../types/user.types';
+import { User, UpdateUserPayload, InviteUserPayload } from '../types/user.types';
 
 export const userApi = {
   // Klinik personel listesini getir
@@ -16,4 +16,8 @@ export const userApi = {
   // Personeli klinikten sil
   delete: (id: number): Promise<ApiResponse<null>> => 
     api.delete(`/users/${id}`),
+
+  // Yeni personel davet et (Email ile)
+  inviteUser: (data: InviteUserPayload): Promise<ApiResponse<User>> => 
+    api.post('/invitations', data),
 };

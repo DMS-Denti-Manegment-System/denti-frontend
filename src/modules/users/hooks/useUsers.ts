@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { userApi } from '../services/userApi';
-import { UpdateUserPayload } from '../types/user.types';
+import { UpdateUserPayload, InviteUserPayload } from '../types/user.types';
 
 export const useUsers = () => {
   const queryClient = useQueryClient();
@@ -14,6 +14,16 @@ export const useUsers = () => {
     queryKey: ['users'],
     queryFn: userApi.getAll,
     select: (data) => data.data,
+  });
+
+  // Yeni personel davet et
+  const inviteMutation = useMutation({
+    mutationFn: (data: InviteUserPayload) => 
+      userApi.invite(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      message.success('Davetiye başarıyla gönderildi.');
+    },
   });
 
   // Personel güncelle
@@ -38,8 +48,10 @@ export const useUsers = () => {
   return {
     users: usersQuery.data || [],
     isLoading: usersQuery.isLoading,
+    inviteUser: inviteMutation.mutateAsync,
     updateUser: updateMutation.mutateAsync,
     deleteUser: deleteMutation.mutateAsync,
+    isInviting: inviteMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
   };

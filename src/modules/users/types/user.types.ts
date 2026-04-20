@@ -18,3 +18,8 @@ export interface UpdateUserPayload {
   is_active: boolean;
   roles: string[]; // Role names or IDs
 }
+
+export interface InviteUserPayload {
+  email: string;
+  role: string;
+}

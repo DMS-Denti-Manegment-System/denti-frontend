@@ -11,8 +11,9 @@ import {
   TeamOutlined
 } from '@ant-design/icons';
 import { useUsers } from '../hooks/useUsers';
-import { User, UpdateUserPayload } from '../types/user.types';
+import { User, UpdateUserPayload, InviteUserPayload } from '../types/user.types';
 import { UserEditModal } from '../components/UserEditModal';
+import { UserInviteModal } from '../components/UserInviteModal';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title, Text } = Typography;
@@ -21,13 +22,16 @@ export const UserManagementPage: React.FC = () => {
   const { message } = App.useApp();
   const [searchText, setSearchText] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const {
     users,
     isLoading,
+    inviteUser,
     updateUser,
     deleteUser,
+    isInviting,
     isUpdating,
   } = useUsers();
 
@@ -54,8 +58,13 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  const handleInviteClick = () => {
-    message.info('Personel davet etme modülü yakında eklenecektir.');
+  const handleInvite = async (values: InviteUserPayload) => {
+    try {
+      await inviteUser(values);
+      setIsInviteModalOpen(false);
+    } catch (error) {
+      console.error('Invite error:', error);
+    }
   };
 
   const columns: ColumnsType<User> = [
@@ -143,7 +152,7 @@ export const UserManagementPage: React.FC = () => {
           <Button 
             type="primary" 
             icon={<UserAddOutlined />} 
-            onClick={handleInviteClick}
+            onClick={() => setIsInviteModalOpen(true)}
             size="large"
           >
             Yeni Personel Davet Et
@@ -185,6 +194,13 @@ export const UserManagementPage: React.FC = () => {
         onSubmit={handleUpdate}
         initialValues={selectedUser}
         loading={isUpdating}
+      />
+
+      <UserInviteModal
+        open={isInviteModalOpen}
+        onCancel={() => setIsInviteModalOpen(false)}
+        onSubmit={handleInvite}
+        loading={isInviting}
       />
     </div>
   );
