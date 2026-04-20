@@ -3,16 +3,13 @@
 import React from 'react'
 import { Table, Tag, Tooltip, Space, Button, Dropdown, Modal, Typography, Avatar } from 'antd'
 
-const { Text, Title } = Typography
+const { Text } = Typography
 import { 
   EditOutlined,
   DeleteOutlined,
   MoreOutlined,
   MinusOutlined,
   PlusOutlined,
-  CalendarOutlined,
-  ShopOutlined,
-  BankOutlined,
   ExclamationCircleOutlined,
   PauseOutlined,
   PlayCircleOutlined,
@@ -24,15 +21,16 @@ import type { MenuProps } from 'antd'
 import { Stock } from '../types/stock.types'
 import { StockLevelBadge } from './StockLevelBadge'
 import { formatStock } from '../../../shared/utils/helpers'
+import { useStockTableLogic } from '../hooks/useStockTableLogic'
 
 interface StockTableProps {
   stocks: Stock[]
   loading: boolean
   onEdit: (stock: Stock) => void
-  onDelete: (id: number) => void          // ✅ YENİ - Standart Akıllı Silme
-  onSoftDelete: (id: number) => void      // Pasif yap
-  onHardDelete: (id: number) => void      // Zorla (Force) kalıcı sil
-  onReactivate: (id: number) => void      // Aktif et
+  onDelete: (id: number) => void
+  onSoftDelete: (id: number) => void
+  onHardDelete: (id: number) => void
+  onReactivate: (id: number) => void
   onAdjust: (stock: Stock) => void
   onUse: (stock: Stock) => void
 }
@@ -41,49 +39,26 @@ export const StockTable: React.FC<StockTableProps> = ({
   stocks,
   loading,
   onEdit,
-  onDelete,         // Standart Delete
-  onSoftDelete,     // Deactivate
-  onHardDelete,     // Force Delete
-  onReactivate,     // Reactivate
+  onDelete,
+  onSoftDelete,
+  onHardDelete,
+  onReactivate,
   onAdjust,
   onUse,
 }) => {
-  const [advancedModalStock, setAdvancedModalStock] = React.useState<Stock | null>(null)
-  const [deleteStockId, setDeleteStockId] = React.useState<number | null>(null)
-
-  // Standart Silme Onayı
-  const handleDeleteConfirm = (id: number) => {
-    setDeleteStockId(id);
-  };
-
-  const handleAdvancedDelete = (record: Stock) => {
-    setAdvancedModalStock(record);
-  };
-
-  // Status hesaplama - DÜZELTİLMİŞ VERSİYON
-  const getStockStatus = (record: Stock) => {
-    console.log('🔍 Stock Debug:', {
-      name: record.name,
-      status: record.status,
-      is_active: record.is_active,
-      type: typeof record.is_active
-    })
-
-    // Backend'den status field'ı varsa öncelik ver
-    if (record.status) {
-      if (record.status === 'deleted') return { type: 'deleted', text: '🗑️ Silindi', color: 'red' }
-      if (record.status === 'inactive') return { type: 'inactive', text: '⏸️ Pasif', color: 'orange' }
-      if (record.status === 'active') return { type: 'active', text: '✅ Aktif', color: 'green' }
-    }
-
-    // is_active field'ına göre değerlendir - STRICT CHECK
-    if (record.is_active === false) {
-      return { type: 'inactive', text: '⏸️ Pasif', color: 'orange' }
-    }
-    
-    // Default olarak aktif kabul et (true, null, undefined için)
-    return { type: 'active', text: '✅ Aktif', color: 'green' }
-  }
+  const {
+    advancedModalStock,
+    setAdvancedModalStock,
+    deleteStockId,
+    setDeleteStockId,
+    getStockStatus,
+    handleDeleteConfirm,
+    handleAdvancedDelete,
+    handleStandardDelete,
+    handleSoftDeleteAction,
+    handleReactivateAction,
+    handleHardDeleteAction
+  } = useStockTableLogic({ onDelete, onSoftDelete, onHardDelete, onReactivate })
 
   const columns: ColumnsType<Stock> = [
     {
@@ -304,7 +279,6 @@ export const StockTable: React.FC<StockTableProps> = ({
       style={{ borderRadius: '8px', overflow: 'hidden' }}
     />
 
-    {/* Gelişmiş Seçenekler Modalı */}
     <Modal
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -317,7 +291,8 @@ export const StockTable: React.FC<StockTableProps> = ({
       footer={null}
       width={500}
       destroyOnHidden
-      >      {advancedModalStock && (
+    >
+      {advancedModalStock && (
         <div>
           <p><strong>Stok:</strong> {advancedModalStock.name}</p>
           <p><strong>Mevcut Durum:</strong> {
@@ -336,43 +311,31 @@ export const StockTable: React.FC<StockTableProps> = ({
           <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
             <Button onClick={() => setAdvancedModalStock(null)}>İptal</Button>
             
-            {/* Pasife Al */}
             {advancedModalStock.is_active !== false && advancedModalStock.status !== 'deleted' && (
               <Button 
                 icon={<PauseOutlined />}
-                onClick={async () => {
-                  await onSoftDelete(advancedModalStock.id)
-                  setAdvancedModalStock(null)
-                }}
+                onClick={handleSoftDeleteAction}
               >
                 Pasife Al
               </Button>
             )}
 
-            {/* Aktif Et */}
             {advancedModalStock.is_active === false && advancedModalStock.status !== 'deleted' && (
               <Button 
                 type="primary"
                 icon={<PlayCircleOutlined />}
-                onClick={async () => {
-                  await onReactivate(advancedModalStock.id)
-                  setAdvancedModalStock(null)
-                }}
+                onClick={handleReactivateAction}
               >
                 Aktif Et
               </Button>
             )}
 
-            {/* Zorla Sil */}
             {advancedModalStock.status !== 'deleted' && (
               <Button 
                 type="primary" 
                 danger 
                 icon={<StopOutlined />}
-                onClick={async () => {
-                  await onHardDelete(advancedModalStock.id)
-                  setAdvancedModalStock(null)
-                }}
+                onClick={handleHardDeleteAction}
               >
                 Zorla Sil
               </Button>
@@ -382,7 +345,6 @@ export const StockTable: React.FC<StockTableProps> = ({
       )}
     </Modal>
 
-    {/* Güvenli Silme Onay Modalı */}
     <Modal
       title="Stoku Silmek İstediğinize Emin Misiniz?"
       open={!!deleteStockId}
@@ -390,12 +352,7 @@ export const StockTable: React.FC<StockTableProps> = ({
       okText="Evet, Sil"
       cancelText="İptal"
       okButtonProps={{ danger: true }}
-      onOk={() => {
-        if (deleteStockId) {
-          onDelete(deleteStockId)
-          setDeleteStockId(null)
-        }
-      }}
+      onOk={handleStandardDelete}
     >
       <p>Bu işlem, stok kullanım geçmişine göre ürünü ya tamamen siler ya da otomatik olarak pasife alır.</p>
     </Modal>

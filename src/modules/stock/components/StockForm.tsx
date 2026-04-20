@@ -1,6 +1,6 @@
 // src/modules/stock/components/StockForm.tsx
 
-import React, { useEffect } from 'react'
+import React from 'react'
 import { 
   Form, 
   Input, 
@@ -11,55 +11,24 @@ import {
   Button, 
   Row, 
   Col,
-  Divider,
-  message
+  Divider
 } from 'antd'
 import { 
   PlusOutlined, 
   SaveOutlined
 } from '@ant-design/icons'
-import dayjs, { Dayjs } from 'dayjs'
-import { useStocks } from '../hooks/useStocks'
-import { CreateStockRequest, Stock } from '../types/stock.types'
-import { useSuppliers } from '../../supplier/hooks/useSuppliers'
-import { useClinics } from '../../clinics/hooks/useClinics'
+import { Stock } from '../types/stock.types'
+import { useStockFormLogic } from '../hooks/useStockFormLogic'
+import { UNIT_OPTIONS, CATEGORY_OPTIONS, CURRENCY_OPTIONS } from '../constants/stockConstants'
+import { STOCK_VALIDATION_RULES } from '../utils/stockValidation'
 
 const { Option } = Select
 const { TextArea } = Input
 
-// StockForm için interface
 interface StockFormProps {
   stock?: Stock
   onSuccess?: () => void
   onCancel?: () => void
-}
-
-// StockForm için özel form values interface
-interface StockFormValues {
-  name: string
-  description?: string
-  brand?: string
-  unit: string
-  category: string
-  current_stock: number
-  current_sub_stock?: number
-  min_stock_level: number
-  critical_stock_level: number
-  yellow_alert_level?: number
-  red_alert_level?: number
-  purchase_price: number
-  currency?: string
-  supplier_id: number
-  clinic_id: number
-  purchase_date: Dayjs | null
-  expiry_date?: Dayjs | null
-  track_expiry?: boolean
-  track_batch?: boolean
-  storage_location?: string
-  is_active?: boolean
-  has_sub_unit?: boolean
-  sub_unit_name?: string
-  sub_unit_multiplier?: number
 }
 
 export const StockForm: React.FC<StockFormProps> = ({ 
@@ -67,142 +36,15 @@ export const StockForm: React.FC<StockFormProps> = ({
   onSuccess, 
   onCancel 
 }) => {
-  const [form] = Form.useForm()
-  
-  // useStocks hook'unu kullan
-  const { createStock, updateStock, isCreating, isUpdating } = useStocks({})
-
-  // Tedarikçileri API'den çek
-  const { suppliers, isLoading: isSuppliersLoading } = useSuppliers()
-
-  // Klinikleri API'den çek
-  const { clinics, isLoading: isClinicsLoading } = useClinics()
-useEffect(() => {
-  if (stock) {
-    const multiplier = (stock.has_sub_unit && stock.sub_unit_multiplier) ? stock.sub_unit_multiplier : 1;
-    form.setFieldsValue({
-      name: stock.name,
-      description: stock.description,
-      brand: stock.brand,
-      unit: stock.unit,
-      category: stock.category,
-      current_stock: stock.current_stock,
-      current_sub_stock: stock.current_sub_stock || 0,
-      // UI'da kutu bazlı gösterim için multiplier'a bölüyoruz
-      min_stock_level: stock.min_stock_level / multiplier,
-      critical_stock_level: stock.critical_stock_level / multiplier,
-      yellow_alert_level: stock.yellow_alert_level ? (stock.yellow_alert_level / multiplier) : undefined,
-      red_alert_level: stock.red_alert_level ? (stock.red_alert_level / multiplier) : undefined,
-      purchase_price: stock.purchase_price,
-      currency: stock.currency,
-      supplier_id: stock.supplier_id,
-      clinic_id: stock.clinic_id,
-      purchase_date: stock.purchase_date ? dayjs(stock.purchase_date) : null,
-      expiry_date: stock.expiry_date ? dayjs(stock.expiry_date) : null,
-      track_expiry: stock.track_expiry,
-      track_batch: stock.track_batch,
-      storage_location: stock.storage_location,
-      is_active: stock.is_active,
-      has_sub_unit: stock.has_sub_unit,
-      sub_unit_name: stock.sub_unit_name,
-      sub_unit_multiplier: stock.sub_unit_multiplier
-    })
-  } else {
-      // Yeni stok için default değerler
-      form.setFieldsValue({
-        currency: 'TRY',
-        is_active: true,
-        unit: 'Kutu',
-        track_expiry: true,
-        track_batch: false,
-        current_stock: 0,
-        min_stock_level: 10,
-        critical_stock_level: 5,
-        has_sub_unit: false
-      })
-    }
-  }, [stock, form])
-const onFinish = async (values: StockFormValues) => {
-  try {
-    const multiplier = (values.has_sub_unit && values.sub_unit_multiplier) ? values.sub_unit_multiplier : 1;
-
-    const formData: CreateStockRequest = {
-      name: values.name,
-      description: values.description,
-      brand: values.brand,
-      unit: values.unit,
-      category: values.category,
-      current_stock: values.current_stock,
-      current_sub_stock: values.has_sub_unit ? (values.current_sub_stock || 0) : 0,
-      // Backend'e Base Unit (Toplam Adet) cinsinden çarparak gönderiyoruz
-      min_stock_level: values.min_stock_level * multiplier,
-      critical_stock_level: values.critical_stock_level * multiplier,
-      yellow_alert_level: (values.yellow_alert_level || values.min_stock_level) * multiplier,
-      red_alert_level: (values.red_alert_level || values.critical_stock_level) * multiplier,
-      purchase_price: values.purchase_price,
-      currency: values.currency || 'TRY',
-      supplier_id: values.supplier_id,
-      clinic_id: values.clinic_id,
-      purchase_date: values.purchase_date?.format('YYYY-MM-DD') || dayjs().format('YYYY-MM-DD'),
-      expiry_date: values.expiry_date?.format('YYYY-MM-DD'),
-      track_expiry: values.track_expiry,
-      track_batch: values.track_batch,
-      storage_location: values.storage_location,
-      is_active: values.is_active,
-      has_sub_unit: values.has_sub_unit,
-      sub_unit_name: values.has_sub_unit ? values.sub_unit_name : undefined,
-      sub_unit_multiplier: values.has_sub_unit ? values.sub_unit_multiplier : undefined
-    }
-
-    console.log('📝 Form Data to Send:', formData)
-
-      if (stock) {
-        await updateStock({ id: stock.id, data: formData })
-        message.success('Stok başarıyla güncellendi!')
-      } else {
-        await createStock(formData)
-        message.success('Stok başarıyla oluşturuldu!')
-        form.resetFields()
-      }
-      onSuccess?.()
-    } catch (error) {
-      console.error('❌ Stok işlemi başarısız:', error)
-      message.error('İşlem sırasında hata oluştu!')
-    }
-  }
-
-  const unitOptions = [
-    { label: 'Adet', value: 'adet' },
-    { label: 'Kutu', value: 'kutu' },
-    { label: 'Paket', value: 'paket' },
-    { label: 'Şişe', value: 'şişe' },
-    { label: 'Şırınga', value: 'şırınga' },
-    { label: 'Tüp', value: 'tüp' },
-    { label: 'Kilogram', value: 'kg' },
-    { label: 'Gram', value: 'gram' },
-    { label: 'Litre', value: 'litre' },
-    { label: 'Metre', value: 'metre' }
-  ]
-
-  const categoryOptions = [
-    { label: 'Diş Hekimliği Malzemeleri', value: 'dental_materials' },
-    { label: 'Dolgu Malzemeleri', value: 'filling_materials' },
-    { label: 'Anestezi Malzemeleri', value: 'anesthesia' },
-    { label: 'Cerrahi Aletler', value: 'surgical_instruments' },
-    { label: 'Röntgen Malzemeleri', value: 'xray_materials' },
-    { label: 'Temizlik Malzemeleri', value: 'cleaning_supplies' },
-    { label: 'Ortodonti Malzemeleri', value: 'orthodontics' },
-    { label: 'Endodonti Malzemeleri', value: 'endodontics' },
-    { label: 'Protez Malzemeleri', value: 'prosthetics' },
-    { label: 'İmplant Malzemeleri', value: 'implants' },
-    { label: 'Diğer', value: 'other' }
-  ]
-
-  const currencyOptions = [
-    { label: 'TL', value: 'TRY' },
-    { label: 'USD', value: 'USD' },
-    { label: 'EUR', value: 'EUR' }
-  ]
+  const {
+    form,
+    handleFinish,
+    loading,
+    suppliers,
+    isSuppliersLoading,
+    clinics,
+    isClinicsLoading
+  } = useStockFormLogic(stock, onSuccess)
 
   const hasSubUnit = Form.useWatch('has_sub_unit', form)
 
@@ -210,27 +52,14 @@ const onFinish = async (values: StockFormValues) => {
     <Form
       form={form}
       layout="vertical"
-      onFinish={onFinish}
-      initialValues={{
-        currency: 'TRY',
-        is_active: true,
-        unit: 'adet',
-        track_expiry: true,
-        track_batch: false,
-        current_stock: 0,
-        min_stock_level: 10,
-        critical_stock_level: 5
-      }}
+      onFinish={handleFinish}
     >
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
             label="Ürün Adı"
             name="name"
-            rules={[
-              { required: true, message: 'Ürün adı gereklidir!' },
-              { min: 2, message: 'Ürün adı en az 2 karakter olmalıdır!' }
-            ]}
+            rules={STOCK_VALIDATION_RULES.name}
           >
             <Input placeholder="Ürün adını girin" />
           </Form.Item>
@@ -261,10 +90,10 @@ const onFinish = async (values: StockFormValues) => {
           <Form.Item
             label="Birim"
             name="unit"
-            rules={[{ required: true, message: 'Birim seçimi gereklidir!' }]}
+            rules={STOCK_VALIDATION_RULES.unit}
           >
             <Select placeholder="Birim seçin">
-              {unitOptions.map(option => (
+              {UNIT_OPTIONS.map(option => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
                 </Option>
@@ -277,10 +106,10 @@ const onFinish = async (values: StockFormValues) => {
           <Form.Item
             label="Kategori"
             name="category"
-            rules={[{ required: true, message: 'Kategori seçimi gereklidir!' }]}
+            rules={STOCK_VALIDATION_RULES.category}
           >
             <Select placeholder="Kategori seçin">
-              {categoryOptions.map(option => (
+              {CATEGORY_OPTIONS.map(option => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
                 </Option>
@@ -310,7 +139,7 @@ const onFinish = async (values: StockFormValues) => {
               <Form.Item
                 label="Alt Birim Adı (Örn: Tüp, Doz)"
                 name="sub_unit_name"
-                rules={[{ required: true, message: 'Alt birim adı gereklidir!' }]}
+                rules={STOCK_VALIDATION_RULES.sub_unit_name}
               >
                 <Input placeholder="Tüp, Doz, Adet vb." />
               </Form.Item>
@@ -320,7 +149,7 @@ const onFinish = async (values: StockFormValues) => {
               <Form.Item
                 label="Çarpan (1 Kapalı Kutu/Ana Birim = Kaç Alt Birim?)"
                 name="sub_unit_multiplier"
-                rules={[{ required: true, message: 'Çarpan gereklidir!' }]}
+                rules={STOCK_VALIDATION_RULES.sub_unit_multiplier}
               >
                 <InputNumber min={2} style={{ width: '100%' }} placeholder="20" />
               </Form.Item>
@@ -334,7 +163,7 @@ const onFinish = async (values: StockFormValues) => {
           <Form.Item
             label={`Mevcut Stok ${hasSubUnit ? '(Kapalı Kutu)' : ''}`}
             name="current_stock"
-            rules={[{ required: true, message: 'Mevcut stok gereklidir!' }]}
+            rules={STOCK_VALIDATION_RULES.current_stock}
           >
             <InputNumber 
               min={0} 
@@ -365,7 +194,7 @@ const onFinish = async (values: StockFormValues) => {
           <Form.Item
             label="Minimum Stok"
             name="min_stock_level"
-            rules={[{ required: true, message: 'Minimum stok gereklidir!' }]}
+            rules={STOCK_VALIDATION_RULES.min_stock_level}
             tooltip={hasSubUnit ? "Bu değer Toplam Alt Birim cinsinden takip edilir." : ""}
           >
             <InputNumber 
@@ -380,7 +209,7 @@ const onFinish = async (values: StockFormValues) => {
           <Form.Item
             label="Kritik Stok"
             name="critical_stock_level"
-            rules={[{ required: true, message: 'Kritik stok gereklidir!' }]}
+            rules={STOCK_VALIDATION_RULES.critical_stock_level}
             tooltip={hasSubUnit ? "Bu değer Toplam Alt Birim cinsinden takip edilir." : ""}
           >
             <InputNumber 
@@ -399,7 +228,7 @@ const onFinish = async (values: StockFormValues) => {
           <Form.Item
             label="Alış Fiyatı"
             name="purchase_price"
-            rules={[{ required: true, message: 'Alış fiyatı gereklidir!' }]}
+            rules={STOCK_VALIDATION_RULES.purchase_price}
           >
             <InputNumber 
               min={0} 
@@ -414,10 +243,10 @@ const onFinish = async (values: StockFormValues) => {
           <Form.Item
             label="Para Birimi"
             name="currency"
-            rules={[{ required: true, message: 'Para birimi seçimi gereklidir!' }]}
+            rules={STOCK_VALIDATION_RULES.currency}
           >
             <Select>
-              {currencyOptions.map(option => (
+              {CURRENCY_OPTIONS.map(option => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
                 </Option>
@@ -470,7 +299,7 @@ const onFinish = async (values: StockFormValues) => {
           <Form.Item
             label="Tedarikçi"
             name="supplier_id"
-            rules={[{ required: true, message: 'Tedarikçi seçimi gereklidir!' }]}
+            rules={STOCK_VALIDATION_RULES.supplier_id}
           >
             <Select 
               placeholder="Tedarikçi seçin"
@@ -492,7 +321,7 @@ const onFinish = async (values: StockFormValues) => {
           <Form.Item
             label="Klinik"
             name="clinic_id"
-            rules={[{ required: true, message: 'Klinik seçimi gereklidir!' }]}
+            rules={STOCK_VALIDATION_RULES.clinic_id}
           >
             <Select 
               placeholder="Klinik seçin"
@@ -516,7 +345,7 @@ const onFinish = async (values: StockFormValues) => {
           <Form.Item
             label="Alış Tarihi"
             name="purchase_date"
-            rules={[{ required: true, message: 'Alış tarihi gereklidir!' }]}
+            rules={STOCK_VALIDATION_RULES.purchase_date}
           >
             <DatePicker 
               style={{ width: '100%' }}
@@ -556,7 +385,7 @@ const onFinish = async (values: StockFormValues) => {
           type="primary" 
           htmlType="submit" 
           icon={stock ? <SaveOutlined /> : <PlusOutlined />}
-          loading={isCreating || isUpdating}
+          loading={loading}
         >
           {stock ? 'Güncelle' : 'Kaydet'}
         </Button>
