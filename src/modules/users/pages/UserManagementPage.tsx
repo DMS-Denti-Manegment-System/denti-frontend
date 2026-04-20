@@ -1,0 +1,191 @@
+// src/modules/users/pages/UserManagementPage.tsx
+
+import React, { useState, useMemo } from 'react';
+import { Card, Table, Tag, Badge, Button, Input, Space, Typography, Row, Col, Popconfirm, Avatar, App } from 'antd';
+import { 
+  UserOutlined, 
+  EditOutlined, 
+  DeleteOutlined, 
+  UserAddOutlined, 
+  SearchOutlined,
+  TeamOutlined
+} from '@ant-design/icons';
+import { useUsers } from '../hooks/useUsers';
+import { User, UpdateUserPayload } from '../types/user.types';
+import { UserEditModal } from '../components/UserEditModal';
+import type { ColumnsType } from 'antd/es/table';
+
+const { Title, Text } = Typography;
+
+export const UserManagementPage: React.FC = () => {
+  const { message } = App.useApp();
+  const [searchText, setSearchText] = useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const {
+    users,
+    isLoading,
+    updateUser,
+    deleteUser,
+    isUpdating,
+  } = useUsers();
+
+  // Arama filtresi
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => 
+      user.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }, [users, searchText]);
+
+  const handleEdit = (user: User) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdate = async (values: UpdateUserPayload) => {
+    if (!selectedUser) return;
+    try {
+      await updateUser({ id: selectedUser.id, data: values });
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Update error:', error);
+    }
+  };
+
+  const handleInviteClick = () => {
+    message.info('Personel davet etme modülü yakında eklenecektir.');
+  };
+
+  const columns: ColumnsType<User> = [
+    {
+      title: 'Personel',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <Space>
+          <Avatar icon={<UserOutlined />} style={{ backgroundColor: record.is_active ? '#1890ff' : '#d9d9d9' }} />
+          <div>
+            <div style={{ fontWeight: 600 }}>{text}</div>
+            <Text type="secondary" size="small">{record.email}</Text>
+          </div>
+        </Space>
+      ),
+    },
+    {
+      title: 'Roller',
+      dataIndex: 'roles',
+      key: 'roles',
+      render: (roles: User['roles']) => (
+        <Space wrap>
+          {roles.length > 0 ? roles.map(role => (
+            <Tag color="geekblue" key={role.id}>{role.name}</Tag>
+          )) : <Text type="secondary">Rol Atanmamış</Text>}
+        </Space>
+      ),
+    },
+    {
+      title: 'Durum',
+      dataIndex: 'is_active',
+      key: 'is_active',
+      render: (isActive: boolean) => (
+        <Badge 
+          status={isActive ? 'success' : 'error'} 
+          text={isActive ? 'Aktif' : 'Pasif'} 
+        />
+      ),
+    },
+    {
+      title: 'İşlemler',
+      key: 'actions',
+      width: 120,
+      align: 'center',
+      render: (_, record) => (
+        <Space>
+          <Button 
+            type="text" 
+            icon={<EditOutlined />} 
+            onClick={() => handleEdit(record)}
+          />
+          <Popconfirm
+            title="Personeli Kaldır"
+            description={`${record.name} isimli personeli klinikten kaldırmak istediğinize emin misiniz? Bu işlem geri alınamaz.`}
+            onConfirm={() => deleteUser(record.id)}
+            okText="Evet, Kaldır"
+            cancelText="İptal"
+            okButtonProps={{ danger: true }}
+          >
+            <Button 
+              type="text" 
+              danger 
+              icon={<DeleteOutlined />} 
+            />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div style={{ padding: '24px' }}>
+      <Row justify="space-between" align="middle" style={{ marginBottom: '24px' }}>
+        <Col>
+          <Space align="center">
+            <TeamOutlined style={{ fontSize: '28px', color: '#1890ff' }} />
+            <div>
+              <Title level={3} style={{ margin: 0 }}>Personel Yönetimi</Title>
+              <Text type="secondary">Klinik bünyesindeki personelleri listeleyebilir, rollerini ve erişim durumlarını yönetebilirsiniz.</Text>
+            </div>
+          </Space>
+        </Col>
+        <Col>
+          <Button 
+            type="primary" 
+            icon={<UserAddOutlined />} 
+            onClick={handleInviteClick}
+            size="large"
+          >
+            Yeni Personel Davet Et
+          </Button>
+        </Col>
+      </Row>
+
+      <Card style={{ marginBottom: '24px' }}>
+        <Row gutter={16}>
+          <Col xs={24} md={8}>
+            <Input
+              placeholder="İsim veya e-posta ile ara..."
+              prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              allowClear
+            />
+          </Col>
+        </Row>
+      </Card>
+
+      <Card styles={{ body: { padding: 0 } }}>
+        <Table 
+          columns={columns} 
+          dataSource={filteredUsers} 
+          rowKey="id" 
+          loading={isLoading}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total) => `Toplam ${total} personel`,
+          }}
+        />
+      </Card>
+
+      <UserEditModal
+        open={isEditModalOpen}
+        onCancel={() => setIsEditModalOpen(false)}
+        onSubmit={handleUpdate}
+        initialValues={selectedUser}
+        loading={isUpdating}
+      />
+    </div>
+  );
+};
