@@ -10,6 +10,8 @@ import {
   StockFilter 
 } from '../types/stock.types'
 
+const STALE_TIME = 300000 // 5 dakika
+
 export const useStocks = (filters?: StockFilter) => {
   const queryClient = useQueryClient()
 
@@ -22,23 +24,15 @@ export const useStocks = (filters?: StockFilter) => {
     queryKey: ['stocks', filters],
     queryFn: () => stockApi.getAll(filters),
     select: (data) => data.data,
-    staleTime: Infinity, // NEVER refresh automatically
-    gcTime: Infinity, // NEVER garbage collect
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-    refetchOnReconnect: false, // Network reconnect'te de yenileme
-    refetchIntervalInBackground: false,
+    staleTime: STALE_TIME,
   })
 
   const createMutation = useMutation({
     mutationFn: stockApi.create,
     onSuccess: () => {
-      // Sadece stocks query'sini invalidate et, başka hiçbirini etme
-      queryClient.invalidateQueries({ 
-        queryKey: ['stocks'],
-        exact: false // Alt query'leri de invalidate et
-      })
+      queryClient.invalidateQueries({ queryKey: ['stocks'] })
+      queryClient.invalidateQueries({ queryKey: ['stock-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok başarıyla oluşturuldu!')
     },
     onError: (error: Error & { response?: { data?: { message?: string } } }) => {
@@ -49,8 +43,11 @@ export const useStocks = (filters?: StockFilter) => {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateStockRequest }) =>
       stockApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['stocks'] })
+      queryClient.invalidateQueries({ queryKey: ['stocks', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['stock-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok başarıyla güncellendi!')
     },
     onError: (error: Error & { response?: { data?: { message?: string } } }) => {
@@ -62,14 +59,14 @@ export const useStocks = (filters?: StockFilter) => {
     mutationFn: stockApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stocks'] })
+      queryClient.invalidateQueries({ queryKey: ['stock-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok başarıyla silindi!')
     },
     onError: (error: Error & { response?: { data?: { message?: string } } }) => {
       message.error(error.response?.data?.message || 'Stok silinirken hata oluştu!')
     }
   })
-
-  // ✅ YENİ MUTATIONS - PASIF/AKTİF/KALICI SİLME
 
   const softDeleteMutation = useMutation({
     mutationFn: stockApi.softDelete,
@@ -86,6 +83,8 @@ export const useStocks = (filters?: StockFilter) => {
     mutationFn: stockApi.hardDelete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stocks'] })
+      queryClient.invalidateQueries({ queryKey: ['stock-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok kalıcı olarak silindi!')
     },
     onError: (error: Error & { response?: { data?: { message?: string } } }) => {
@@ -107,8 +106,11 @@ export const useStocks = (filters?: StockFilter) => {
   const adjustStockMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: StockAdjustmentRequest }) =>
       stockApi.adjustStock(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['stocks'] })
+      queryClient.invalidateQueries({ queryKey: ['stocks', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['stock-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok miktarı başarıyla ayarlandı!')
     },
     onError: (error: Error & { response?: { data?: { message?: string } } }) => {
@@ -119,8 +121,11 @@ export const useStocks = (filters?: StockFilter) => {
   const useStockMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: StockUsageRequest }) =>
       stockApi.useStock(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['stocks'] })
+      queryClient.invalidateQueries({ queryKey: ['stocks', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['stock-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok kullanımı başarıyla kaydedildi!')
     },
     onError: (error: Error & { response?: { data?: { message?: string } } }) => {
@@ -135,56 +140,42 @@ export const useStocks = (filters?: StockFilter) => {
     refetch,
     createStock: createMutation.mutateAsync,
     updateStock: updateMutation.mutateAsync,
-    deleteStock: deleteMutation.mutateAsync, // Eski delete (akıllı silme)
-    
-    // ✅ YENİ METODLAR
-    softDeleteStock: softDeleteMutation.mutateAsync,      // Pasif yap
-    hardDeleteStock: hardDeleteMutation.mutateAsync,      // Kalıcı sil
-    reactivateStock: reactivateMutation.mutateAsync,      // Aktif et
-    
+    deleteStock: deleteMutation.mutateAsync,
+    softDeleteStock: softDeleteMutation.mutateAsync,
+    hardDeleteStock: hardDeleteMutation.mutateAsync,
+    reactivateStock: reactivateMutation.mutateAsync,
     adjustStock: adjustStockMutation.mutateAsync,
     useStock: useStockMutation.mutateAsync,
     
-    // Loading states
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
-    isSoftDeleting: softDeleteMutation.isPending,         // Pasif yapma loading
-    isHardDeleting: hardDeleteMutation.isPending,         // Kalıcı silme loading
-    isReactivating: reactivateMutation.isPending,         // Aktif etme loading
+    isSoftDeleting: softDeleteMutation.isPending,
+    isHardDeleting: hardDeleteMutation.isPending,
+    isReactivating: reactivateMutation.isPending,
     isAdjusting: adjustStockMutation.isPending,
     isUsing: useStockMutation.isPending
   }
 }
 
-// Tekil stok için hook - TAMAMEN DISABLE ET
+// Tekil stok için hook
 export const useStock = (id: number) => {
   return useQuery({
     queryKey: ['stocks', id],
     queryFn: () => stockApi.getById(id),
     select: (data) => data.data,
-    enabled: false, // TAMAMEN KAPAT
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    retry: false,
+    enabled: !!id,
+    staleTime: STALE_TIME,
   })
 }
 
-// Diğer hook'ları da disable et veya çok sınırla
+// Kritik ve azalan stoklar için hook'lar
 export const useLowStockItems = () => {
   return useQuery({
     queryKey: ['stock-levels', 'low'],
     queryFn: stockApi.getLowStockItems,
     select: (data) => data.data,
-    enabled: false, // TAMAMEN KAPAT - manuel çağrı yapılana kadar
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-    retry: false,
+    staleTime: STALE_TIME,
   })
 }
 
@@ -193,13 +184,7 @@ export const useCriticalStockItems = () => {
     queryKey: ['stock-levels', 'critical'],
     queryFn: stockApi.getCriticalStockItems,
     select: (data) => data.data,
-    enabled: false, // TAMAMEN KAPAT
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-    retry: false,
+    staleTime: STALE_TIME,
   })
 }
 
@@ -208,28 +193,16 @@ export const useExpiringItems = (days?: number) => {
     queryKey: ['stock-levels', 'expiring', days],
     queryFn: () => stockApi.getExpiringItems(days),
     select: (data) => data.data,
-    enabled: false, // TAMAMEN KAPAT
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-    retry: false,
+    staleTime: STALE_TIME,
   })
 }
 
-// Stats hook'u da minimal yap
+// İstatistikler için hook
 export const useStockStats = () => {
   return useQuery({
     queryKey: ['stock-stats'],
     queryFn: stockApi.getStats,
     select: (data) => data.data,
-    enabled: false, // TAMAMEN KAPAT - sadece manuel çağrı
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-    retry: false,
+    staleTime: STALE_TIME,
   })
 }
