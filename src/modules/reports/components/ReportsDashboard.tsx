@@ -13,8 +13,11 @@ import {
   Badge,
   Tooltip,
   Divider,
-  Skeleton
+  Skeleton,
+  Typography
 } from 'antd'
+
+const { Text } = Typography
 import { 
   BarChartOutlined,
   PieChartOutlined,
@@ -32,6 +35,7 @@ import DateRangeFilter from './filters/DateRangeFilter'
 import ClinicFilter from './filters/ClinicFilter'
 import CategoryChart from './charts/CategoryChart'
 import TrendChart from './charts/TrendChart'
+import { StockForecastCards } from './charts/StockForecastCards'
 
 // Import hooks
 import { useAllStockReports, useStockStatusSummary } from '../hooks/useStockReports'
@@ -74,12 +78,15 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
   // =============================================================================
 
   const { 
-    data: stockReports, 
+    summary: stockSummaryData,
+    movements: stockMovements,
+    levels: stockLevels,
     isLoading: stockLoading,
     error: stockError,
     refetch: refetchStock 
   } = useAllStockReports(filters)
 
+  // Use the specific summary hook for quick stats if needed, or just use from all reports
   const { 
     data: stockSummary,
     isLoading: summaryLoading
@@ -100,26 +107,33 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
   // =============================================================================
 
   const dashboardStats = useMemo(() => {
-    if (!stockSummary) return {
+    // Priority: stockSummary hook, then stockSummaryData from allReports, then defaults
+    const summary = stockSummary || stockSummaryData
+    
+    if (!summary) return {
       totalStocks: 0,
       normalStocks: 0,
       lowStocks: 0,
       criticalStocks: 0,
       outOfStock: 0,
-      healthPercentage: 0
+      healthPercentage: 0,
+      totalValue: 0,
+      totalBaseQuantity: 0
     }
 
     return {
-      totalStocks: stockSummary.total || 0,
-      normalStocks: stockSummary.normal || 0,
-      lowStocks: stockSummary.low || 0,
-      criticalStocks: stockSummary.critical || 0,
-      outOfStock: stockSummary.outOfStock || 0,
-      healthPercentage: stockSummary.total > 0 
-        ? Math.round((stockSummary.normal / stockSummary.total) * 100) 
-        : 0
+      totalStocks: summary.total || 0,
+      normalStocks: summary.normal || 0,
+      lowStocks: summary.low || 0,
+      criticalStocks: summary.critical || 0,
+      outOfStock: summary.outOfStock || 0,
+      healthPercentage: summary.total > 0 
+        ? Math.round((summary.normal / summary.total) * 100) 
+        : 0,
+      totalValue: summary.total_value || 0,
+      totalBaseQuantity: summary.total_base_quantity || 0
     }
-  }, [stockSummary])
+  }, [stockSummary, stockSummaryData])
 
   const filterSummary = useMemo(() => {
     const startDate = filters.startDate ? dayjs(filters.startDate).format('DD.MM.YYYY') : ''
@@ -165,30 +179,31 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
   const renderQuickStats = () => {
     const stats = [
       {
-        title: 'Toplam Stok',
-        value: dashboardStats.totalStocks,
-        suffix: 'kalem',
+        title: 'Depo Değeri',
+        value: dashboardStats.totalValue,
+        suffix: '₺',
+        color: '#722ed1',
+        icon: <PieChartOutlined />,
+        precision: 2
+      },
+      {
+        title: 'Toplam Kapasite (Birim)',
+        value: dashboardStats.totalBaseQuantity,
+        suffix: 'birim',
         color: '#1890ff',
         icon: <BarChartOutlined />
       },
       {
-        title: 'Normal Seviye',
-        value: dashboardStats.normalStocks,
+        title: 'Stok Kalemi',
+        value: dashboardStats.totalStocks,
         suffix: 'kalem',
-        color: '#52c41a',
-        icon: <Badge status="success" />
+        color: '#13c2c2',
+        icon: <DashboardOutlined />
       },
       {
-        title: 'Düşük Seviye',
-        value: dashboardStats.lowStocks,
-        suffix: 'kalem',
-        color: '#faad14',
-        icon: <Badge status="warning" />
-      },
-      {
-        title: 'Kritik Seviye',
-        value: dashboardStats.criticalStocks,
-        suffix: 'kalem',
+        title: 'Düşük/Kritik Stok',
+        value: dashboardStats.lowStocks + dashboardStats.criticalStocks,
+        suffix: 'uyarı',
         color: '#f5222d',
         icon: <Badge status="error" />
       }
@@ -198,14 +213,15 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {stats.map((stat, index) => (
           <Col xs={12} sm={6} key={index}>
-            <Card size="small">
+            <Card size="small" className="premium-card" style={{ borderRadius: 12 }}>
               <Skeleton loading={summaryLoading} active avatar={false} paragraph={{ rows: 1 }}>
                 <Statistic
                   title={stat.title}
                   value={stat.value}
                   suffix={stat.suffix}
                   prefix={stat.icon}
-                  valueStyle={{ color: stat.color, fontSize: compactMode ? '20px' : '24px' }}
+                  precision={stat.precision || 0}
+                  valueStyle={{ color: stat.color, fontSize: compactMode ? '20px' : '24px', fontWeight: 'bold' }}
                 />
               </Skeleton>
             </Card>
@@ -294,47 +310,73 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
   }
 
   const renderOverviewTab = () => (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} lg={12}>
-        <CategoryChart
-          filters={filters}
-          height={compactMode ? 300 : 400}
-          showControls={true}
-          defaultMode="pie"
-        />
-      </Col>
-      <Col xs={24} lg={12}>
-        <TrendChart
-          filters={filters}
-          height={compactMode ? 300 : 400}
-          showControls={true}
-          showForecast={true}
-          showKPIs={true}
-        />
-      </Col>
-    </Row>
+    <Space direction="vertical" size={24} style={{ width: '100%' }}>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={16}>
+          <TrendChart 
+            filters={filters} 
+            height={300} 
+          />
+        </Col>
+        <Col xs={24} lg={8}>
+          <StockForecastCards />
+        </Col>
+      </Row>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={12}>
+          <CategoryChart
+            height={350}
+          />
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card 
+            title="Hızlı İşlemler & Durum" 
+            style={{ height: '100%', borderRadius: 12 }}
+            className="premium-card"
+          >
+            <div style={{ padding: '20px 0' }}>
+              <Statistic
+                title="Sistem Sağlık Oranı"
+                value={dashboardStats.healthPercentage}
+                suffix="%"
+                valueStyle={{ 
+                  color: dashboardStats.healthPercentage > 80 ? '#52c41a' : 
+                         dashboardStats.healthPercentage > 60 ? '#faad14' : '#f5222d',
+                  fontSize: 48,
+                  fontWeight: 'bold'
+                }}
+              />
+              <Text type="secondary">
+                Normal stok seviyesindeki ürünlerin toplam ürün sayısına oranı.
+              </Text>
+              <Divider />
+              <Button type="primary" block icon={<LineChartOutlined />} onClick={() => setActiveTab('trend')}>
+                Detaylı Analize Git
+              </Button>
+            </div>
+          </Card>
+        </Col>
+      </Row>
+    </Space>
   )
 
   const renderStockTab = () => (
     <Row gutter={[16, 16]}>
       <Col span={24}>
-        <CategoryChart
+        <TrendChart
           filters={filters}
-          height={compactMode ? 350 : 450}
-          showControls={true}
-          defaultMode="bar"
-          defaultValueType="count"
+          height={400}
         />
       </Col>
       <Col span={24}>
-        <Card title="Stok Seviye Analizi" size="small">
+        <Card title="Stok Seviye Analizi" size="small" className="premium-card" style={{ borderRadius: 12 }}>
           <Skeleton loading={stockLoading} active paragraph={{ rows: 1 }}>
-            {stockReports ? (
+            {(dashboardStats || stockMovements) ? (
               <Row gutter={[16, 16]}>
                 <Col xs={12} sm={6}>
                   <Statistic
                     title="Normal Seviye"
-                    value={stockReports.levels?.summary?.normal || 0}
+                    value={dashboardStats.normalStocks}
                     suffix="kalem"
                     valueStyle={{ color: '#52c41a' }}
                   />
@@ -342,7 +384,7 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
                 <Col xs={12} sm={6}>
                   <Statistic
                     title="Düşük Seviye"
-                    value={stockReports.levels?.summary?.low || 0}
+                    value={dashboardStats.lowStocks}
                     suffix="kalem"
                     valueStyle={{ color: '#faad14' }}
                   />
@@ -350,7 +392,7 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
                 <Col xs={12} sm={6}>
                   <Statistic
                     title="Kritik Seviye"
-                    value={stockReports.levels?.summary?.critical || 0}
+                    value={dashboardStats.criticalStocks}
                     suffix="kalem"
                     valueStyle={{ color: '#f5222d' }}
                   />
@@ -358,8 +400,8 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
                 <Col xs={12} sm={6}>
                   <Statistic
                     title="Toplam Hareket"
-                    value={stockReports.movements?.totalMovements || 0}
-                    suffix="hareket"
+                    value={stockMovements?.purchase?.count || 0}
+                    suffix="alış"
                     valueStyle={{ color: '#1890ff' }}
                   />
                 </Col>
@@ -375,23 +417,11 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
 
   const renderCategoryTab = () => (
     <Row gutter={[16, 16]}>
-      <Col span={24}>
-        <CategoryChart
-          filters={filters}
-          height={compactMode ? 400 : 500}
-          showControls={true}
-          defaultMode="donut"
-          defaultValueType="percentage"
-        />
+      <Col xs={24} lg={16}>
+        <CategoryChart height={450} />
       </Col>
-      <Col span={24}>
-        <CategoryChart
-          filters={filters}
-          height={compactMode ? 300 : 350}
-          showControls={false}
-          defaultMode="table"
-          defaultValueType="count"
-        />
+      <Col xs={24} lg={8}>
+        <StockForecastCards />
       </Col>
     </Row>
   )
@@ -401,10 +431,7 @@ export const ReportsDashboard: React.FC<ReportsDashboardProps> = ({
       <Col span={24}>
         <TrendChart
           filters={filters}
-          height={compactMode ? 450 : 550}
-          showControls={true}
-          showForecast={true}
-          showKPIs={true}
+          height={500}
         />
       </Col>
       <Col xs={24} lg={12}>

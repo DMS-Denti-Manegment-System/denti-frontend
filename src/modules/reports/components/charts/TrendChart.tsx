@@ -7,477 +7,164 @@ import {
   Space, 
   Button, 
   Statistic, 
-  Alert, 
   Spin, 
-  Switch, 
-  Tooltip
+  Empty,
+  Typography
 } from 'antd'
 import { 
-  LineChartOutlined, 
   AreaChartOutlined, 
   RiseOutlined,
   FallOutlined,
-  SyncOutlined,
-  InfoCircleOutlined
+  SyncOutlined
 } from '@ant-design/icons'
 import {
-  LineChart,
-  Line,
   Area,
   AreaChart,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine
+  ResponsiveContainer
 } from 'recharts'
-import { useStockTrendAnalysis } from '../../hooks/useStockReports'
+import { useStockTrends } from '../../hooks/useStockReports'
 import type { ReportFilter } from '../../types/reports.types'
+import dayjs from 'dayjs'
 
 const { Option } = Select
-
-// =============================================================================
-// INTERFACES
-// =============================================================================
+const { Text } = Typography
 
 interface TrendChartProps {
   filters?: ReportFilter
   height?: number
-  showControls?: boolean
-  showForecast?: boolean
-  showKPIs?: boolean
 }
-
-type ChartType = 'line' | 'area' | 'combined'
-type TimeRange = 'daily' | 'weekly' | 'monthly' | 'quarterly'
-
-interface ChartDataItem {
-  label: string
-  value: number
-  actualValue: number | null
-  forecastValue: number | null
-  isForecast: boolean
-}
-
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-
-const CHART_TYPES = [
-  { key: 'line', label: 'Çizgi Grafik', icon: <LineChartOutlined /> },
-  { key: 'area', label: 'Alan Grafik', icon: <AreaChartOutlined /> },
-  { key: 'combined', label: 'Karma Grafik', icon: <LineChartOutlined /> }
-]
-
-const TIME_RANGES = [
-  { key: 'daily', label: 'Günlük', description: 'Günlük trend analizi' },
-  { key: 'weekly', label: 'Haftalık', description: 'Haftalık ortalamalar' },
-  { key: 'monthly', label: 'Aylık', description: 'Aylık toplam değerler' },
-  { key: 'quarterly', label: 'Çeyreklik', description: 'Çeyrek yıllık analiz' }
-]
-
-// =============================================================================
-// MAIN COMPONENT
-// =============================================================================
 
 export const TrendChart: React.FC<TrendChartProps> = ({
   filters,
-  height = 400,
-  showControls = true,
-  showForecast = true,
-  showKPIs = true
+  height = 350
 }) => {
-  const [chartType, setChartType] = useState<ChartType>('line')
-  const [timeRange, setTimeRange] = useState<TimeRange>('monthly')
-  const [showForecastData, setShowForecastData] = useState(showForecast)
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [period, setPeriod] = useState<'day' | 'month'>('day')
+  
+  const { data: trends, isLoading, refetch } = useStockTrends({ ...filters, period })
 
-  // Fetch data
-  const { data: trendData, isLoading, error, refetch } = useStockTrendAnalysis(filters)
-
-  // =============================================================================
-  // COMPUTED VALUES
-  // =============================================================================
-
-  const chartData = useMemo((): ChartDataItem[] => {
-    if (!trendData) return []
-
-    // Trends data mapping
-    const combinedData = trendData.trends.map((trend, index) => {
-      const forecastItem = trendData.forecast[index]
-      return {
-        label: trend.label || trend.date || `Dönem ${index + 1}`,
-        value: trend.value,
-        actualValue: trend.value,
-        forecastValue: forecastItem?.predicted || null,
-        isForecast: false
-      }
-    })
-
-    if (showForecastData && trendData.forecast) {
-      // Forecast data mapping
-      const forecastData = trendData.forecast.map((forecast, index) => ({
-        label: forecast.label || forecast.date || `Tahmin ${index + 1}`,
-        value: forecast.predicted,
-        actualValue: null,
-        forecastValue: forecast.predicted,
-        isForecast: true
-      }))
-      
-      return [...combinedData, ...forecastData]
-    }
-
-    return combinedData
-  }, [trendData, showForecastData])
-
-  const trendIndicators = useMemo(() => {
-    if (!trendData) return null
-
-    // API'de summary field'ı yok, trends data'sından summary oluşturuyoruz
-    const trends = trendData.trends || []
-    if (trends.length < 2) return null
-
-    const latestValue = trends[trends.length - 1]?.value || 0
-    const previousValue = trends[trends.length - 2]?.value || 0
-    const change = latestValue - previousValue
-    const changePercent = previousValue > 0 ? (change / previousValue) * 100 : 0
-
-    const direction = change > 0 ? 'up' : change < 0 ? 'down' : 'stable'
-    const recommendation = direction === 'up' 
-      ? 'Pozitif trend devam ediyor, stok planlaması güncellenebilir'
-      : direction === 'down'
-      ? 'Azalan trend gözlemleniyor, analiz yapılması önerilir'
-      : 'Stabil durum, mevcut strateji sürdürülebilir'
-
-    return {
-      direction,
-      percentage: Math.abs(changePercent),
-      isPositive: direction === 'up',
-      isNegative: direction === 'down',
-      isStable: direction === 'stable',
-      recommendation,
-      color: direction === 'up' ? '#52c41a' : direction === 'down' ? '#f5222d' : '#faad14'
-    }
-  }, [trendData])
-
-  // Düzeltilmiş KPI hesaplaması
-  const kpiMetrics = useMemo(() => {
-    if (!chartData.length) return null
-
-    const actualData = chartData.filter(item => !item.isForecast && item.actualValue !== null)
-    const values = actualData.map(item => item.actualValue).filter((val): val is number => val !== null)
+  const stats = useMemo(() => {
+    if (!trends || trends.length < 2) return null
+    const latest = trends[trends.length - 1]
+    const previous = trends[trends.length - 2]
     
-    if (values.length === 0) return null
-
-    const total = values.reduce((sum, val) => sum + val, 0)
-    const average = total / values.length
-    const min = Math.min(...values)
-    const max = Math.max(...values)
-    const latest = values[values.length - 1] || 0
-    const previous = values[values.length - 2] || latest
-    const change = latest - previous
-    const changePercent = previous > 0 ? (change / previous) * 100 : 0
-
+    const diff = latest.total_quantity - previous.total_quantity
+    const percent = previous.total_quantity > 0 ? (diff / previous.total_quantity) * 100 : 0
+    
     return {
-      total: Math.round(total),
-      average: Math.round(average * 10) / 10,
-      min,
-      max,
-      latest,
-      change: Math.round(change * 10) / 10,
-      changePercent: Math.round(changePercent * 10) / 10,
-      trend: change > 0 ? 'up' : change < 0 ? 'down' : 'stable'
+      latest: latest.total_quantity,
+      count: latest.transaction_count,
+      percent: percent.toFixed(1),
+      isRise: diff >= 0
     }
-  }, [chartData])
-
-  // =============================================================================
-  // HANDLERS
-  // =============================================================================
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
-    try {
-      await refetch()
-    } finally {
-      setTimeout(() => setIsRefreshing(false), 1000)
-    }
-  }
-
-  // =============================================================================
-  // RENDER HELPERS
-  // =============================================================================
-
-  const renderLineChart = () => (
-    <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="label" />
-        <YAxis />
-        <RechartsTooltip 
-          formatter={(value: number, name: string) => [
-            `${value} adet`,
-            name === 'actualValue' ? 'Gerçek Değer' : 'Tahmin'
-          ]}
-          labelFormatter={(label) => `Tarih: ${label}`}
-        />
-        <Legend />
-        
-        {/* Actual data line */}
-        <Line
-          type="monotone"
-          dataKey="actualValue"
-          stroke="#1890ff"
-          strokeWidth={2}
-          dot={{ fill: '#1890ff', strokeWidth: 2, r: 4 }}
-          name="Gerçek Değer"
-          connectNulls={false}
-        />
-        
-        {/* Forecast line */}
-        {showForecastData && (
-          <Line
-            type="monotone"
-            dataKey="forecastValue"
-            stroke="#faad14"
-            strokeWidth={2}
-            strokeDasharray="5 5"
-            dot={{ fill: '#faad14', strokeWidth: 2, r: 4 }}
-            name="Tahmin"
-            connectNulls={false}
-          />
-        )}
-        
-        {/* Trend line */}
-        {kpiMetrics && (
-          <ReferenceLine 
-            y={kpiMetrics.average} 
-            stroke="#52c41a" 
-            strokeDasharray="3 3"
-            label="Ortalama"
-          />
-        )}
-      </LineChart>
-    </ResponsiveContainer>
-  )
-
-  const renderAreaChart = () => (
-    <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="label" />
-        <YAxis />
-        <RechartsTooltip 
-          formatter={(value: number, name: string) => [
-            `${value} adet`,
-            name === 'actualValue' ? 'Gerçek Değer' : 'Tahmin'
-          ]}
-        />
-        <Legend />
-        
-        <Area
-          type="monotone"
-          dataKey="actualValue"
-          stroke="#1890ff"
-          fill="#1890ff"
-          fillOpacity={0.3}
-          name="Gerçek Değer"
-        />
-        
-        {showForecastData && (
-          <Area
-            type="monotone"
-            dataKey="forecastValue"
-            stroke="#faad14"
-            fill="#faad14"
-            fillOpacity={0.2}
-            strokeDasharray="5 5"
-            name="Tahmin"
-          />
-        )}
-      </AreaChart>
-    </ResponsiveContainer>
-  )
-
-  const renderChart = () => {
-    switch (chartType) {
-      case 'line':
-        return renderLineChart()
-      case 'area':
-        return renderAreaChart()
-      case 'combined':
-        return renderLineChart() // Combined will be line with areas
-      default:
-        return renderLineChart()
-    }
-  }
-
-  const renderTrendOverview = () => {
-    if (!trendIndicators || !showKPIs) return null
-
-    return (
-      <div style={{ marginBottom: 16 }}>
-        <Space size="large">
-          <Statistic
-            title="Trend Yönü"
-            value={trendIndicators.percentage}
-            suffix="%"
-            prefix={
-              trendIndicators.isPositive ? (
-                <RiseOutlined style={{ color: '#52c41a' }} />
-              ) : trendIndicators.isNegative ? (
-                <FallOutlined style={{ color: '#f5222d' }} />
-              ) : (
-                <InfoCircleOutlined style={{ color: '#faad14' }} />
-              )
-            }
-            valueStyle={{ color: trendIndicators.color }}
-          />
-          
-          {kpiMetrics && (
-            <>
-              <Statistic
-                title="Son Değer"
-                value={kpiMetrics.latest || 0}
-                suffix="adet"
-                valueStyle={{ fontSize: '18px' }}
-              />
-              
-              <Statistic
-                title="Değişim"
-                value={kpiMetrics.change}
-                suffix={kpiMetrics.changePercent > 0 ? `(+${kpiMetrics.changePercent}%)` : `(${kpiMetrics.changePercent}%)`}
-                prefix={
-                  kpiMetrics.trend === 'up' ? (
-                    <RiseOutlined style={{ color: '#52c41a' }} />
-                  ) : kpiMetrics.trend === 'down' ? (
-                    <FallOutlined style={{ color: '#f5222d' }} />
-                  ) : null
-                }
-                valueStyle={{ 
-                  color: kpiMetrics.trend === 'up' ? '#52c41a' : 
-                         kpiMetrics.trend === 'down' ? '#f5222d' : 'inherit'
-                }}
-              />
-              
-              <Statistic
-                title="Ortalama"
-                value={kpiMetrics.average}
-                suffix="adet"
-              />
-            </>
-          )}
-        </Space>
-        
-        {trendIndicators.recommendation && (
-          <Alert
-            message="Trend Önerisi"
-            description={trendIndicators.recommendation}
-            type="info"
-            showIcon
-            style={{ marginTop: 12 }}
-          />
-        )}
-      </div>
-    )
-  }
-
-  const renderControls = () => {
-    if (!showControls) return null
-
-    return (
-      <Space>
-        <Select
-          value={chartType}
-          onChange={setChartType}
-          style={{ width: 120 }}
-        >
-          {CHART_TYPES.map(type => (
-            <Option key={type.key} value={type.key}>
-              <Space size="small">
-                {type.icon}
-                {type.label}
-              </Space>
-            </Option>
-          ))}
-        </Select>
-
-        <Select
-          value={timeRange}
-          onChange={setTimeRange}
-          style={{ width: 100 }}
-        >
-          {TIME_RANGES.map(range => (
-            <Option key={range.key} value={range.key}>
-              {range.label}
-            </Option>
-          ))}
-        </Select>
-
-        <Tooltip title="Tahmin verilerini göster/gizle">
-          <Space>
-            <span>Tahmin:</span>
-            <Switch
-              checked={showForecastData}
-              onChange={setShowForecastData}
-              size="small"
-            />
-          </Space>
-        </Tooltip>
-
-        <Button
-          icon={<SyncOutlined spin={isRefreshing} />}
-          onClick={handleRefresh}
-          loading={isRefreshing}
-        >
-          Yenile
-        </Button>
-      </Space>
-    )
-  }
-
-  // =============================================================================
-  // RENDER
-  // =============================================================================
-
-  if (error) {
-    return (
-      <Alert
-        message="Trend verileri yüklenemedi"
-        description={error.message}
-        type="error"
-        showIcon
-        action={
-          <Button size="small" onClick={handleRefresh}>
-            Tekrar Dene
-          </Button>
-        }
-      />
-    )
-  }
+  }, [trends])
 
   return (
-    <Card
-      title="Trend Analizi"
-      extra={renderControls()}
-      loading={isLoading}
+    <Card 
+      title={
+        <Space>
+          <AreaChartOutlined style={{ color: '#1890ff' }} />
+          <span>Kullanım Trendleri</span>
+        </Space>
+      }
+      extra={
+        <Space>
+          <Select value={period} onChange={setPeriod} size="small" style={{ width: 100 }}>
+            <Option value="day">Günlük</Option>
+            <Option value="month">Aylık</Option>
+          </Select>
+          <Button 
+            size="small" 
+            type="text" 
+            icon={<SyncOutlined spin={isLoading} />} 
+            onClick={() => refetch()} 
+          />
+        </Space>
+      }
+      className="premium-card"
+      style={{ borderRadius: 12 }}
     >
-      {chartData.length === 0 ? (
-        <Alert
-          message="Trend verisi bulunamadı"
-          description="Seçili filtrelere uygun trend verisi bulunamadı."
-          type="info"
-          showIcon
-        />
-      ) : (
-        <>
-          {renderTrendOverview()}
-          <Spin spinning={isLoading}>
-            {renderChart()}
-          </Spin>
-        </>
+      {stats && (
+        <div style={{ marginBottom: 24, display: 'flex', gap: 48 }}>
+          <Statistic
+            title="Son Dönem Tüketim"
+            value={stats.latest}
+            suffix="birim"
+            precision={0}
+            valueStyle={{ color: '#1890ff', fontSize: 24 }}
+          />
+          <Statistic
+            title="Değişim"
+            value={Math.abs(Number(stats.percent))}
+            prefix={stats.isRise ? <RiseOutlined /> : <FallOutlined />}
+            suffix="%"
+            valueStyle={{ color: stats.isRise ? '#52c41a' : '#ff4d4f' }}
+          />
+          <Statistic
+            title="İşlem Sayısı"
+            value={stats.count}
+            valueStyle={{ fontSize: 20 }}
+          />
+        </div>
       )}
+
+      <div style={{ width: '100%', height }}>
+        {isLoading ? (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Spin />
+          </div>
+        ) : trends && trends.length > 0 ? (
+          <ResponsiveContainer>
+            <AreaChart data={trends} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorQty" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#1890ff" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#1890ff" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="period" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: '#8c8c8c' }}
+                tickFormatter={(val) => period === 'day' ? dayjs(val).format('DD MMM') : dayjs(val).format('MMM YYYY')}
+              />
+              <YAxis 
+                hide 
+              />
+              <RechartsTooltip 
+                contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                formatter={(value: number, name: string) => [
+                  value, 
+                  name === 'total_quantity' ? 'Toplam Tüketim' : 'İşlem Sayısı'
+                ]}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="total_quantity" 
+                stroke="#1890ff" 
+                strokeWidth={3}
+                fillOpacity={1} 
+                fill="url(#colorQty)" 
+              />
+              <Area 
+                type="monotone" 
+                dataKey="transaction_count" 
+                stroke="#52c41a" 
+                strokeWidth={2}
+                fill="transparent"
+                strokeDasharray="5 5"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <Empty description="Bu döneme ait trend verisi bulunamadı." />
+        )}
+      </div>
     </Card>
   )
 }

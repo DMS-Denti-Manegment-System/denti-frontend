@@ -7,6 +7,9 @@ import { antdHelper } from '../utils/antdHelper'
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
   withCredentials: true, // Cookies handle the session (Sanctum)
+  withXSRFToken: true,   // Modern axios needs this for CSRF headers
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -15,14 +18,29 @@ export const api = axios.create({
   timeout: 10000,
 })
 
+// CSRF check helper
+const ensureCsrf = async (configBaseURL: string) => {
+  if (!document.cookie.includes('XSRF-TOKEN')) {
+    // Determine the base URL for the sanctum endpoint
+    let baseUrl = configBaseURL || api.defaults.baseURL || 'http://localhost:8000/api'
+    
+    // Ensure we have an absolute URL for the domain extraction
+    if (baseUrl.startsWith('/')) {
+      baseUrl = window.location.origin + baseUrl
+    }
+    
+    const domain = baseUrl.split('/api')[0]
+    await axios.get(`${domain}/sanctum/csrf-cookie`, { withCredentials: true })
+  }
+}
+
 // Request Interceptor
 api.interceptors.request.use(
   async (config) => {
+    const method = config.method?.toLowerCase()
     // CSRF protection for state-changing requests (except GET)
-    if (config.method !== 'get' && !document.cookie.includes('XSRF-TOKEN')) {
-      const baseUrl = config.baseURL || '';
-      const domain = baseUrl.replace('/api', '');
-      await axios.get(`${domain}/sanctum/csrf-cookie`, { withCredentials: true });
+    if (method && method !== 'get') {
+      await ensureCsrf(config.baseURL || api.defaults.baseURL || '')
     }
     return config
   },

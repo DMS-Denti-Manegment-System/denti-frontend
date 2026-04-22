@@ -24,9 +24,10 @@ export interface ReportFilter {
   supplierId?: number
   supplierIds?: number[]
   category?: string
-  categories?: string[] // ✅ ADDED
+  categories?: string[]
   stockStatus?: 'low' | 'critical' | 'normal' | 'out_of_stock'
   search?: string
+  period?: 'day' | 'week' | 'month' // ✅ ADDED
 }
 
 // =============================================================================
@@ -444,6 +445,10 @@ export interface ReportsDashboardSummary {
     low: number
     critical: number
     outOfStock: number
+    total_main_quantity?: number // ✅ ADDED
+    total_base_quantity?: number // ✅ ADDED
+    total_value?: number // ✅ ADDED
+    low_stock_items?: number // ✅ ADDED
   }
   supplierSummary: {
     totalSuppliers: number
@@ -463,6 +468,29 @@ export interface ReportsDashboardSummary {
     pendingAlerts: number
     resolvedToday: number
   }
+}
+
+// =============================================================================
+// ADVANCED ANALYTICS (NEW)
+// =============================================================================
+
+export interface StockForecast {
+  name: string
+  avg_daily_usage: number
+  estimated_days_left: number
+  current_stock: number
+}
+
+export interface CategoryValueDistribution {
+  category: string
+  item_count: number
+  total_value: number
+}
+
+export interface ConsumptionTrendPoint {
+  period: string
+  transaction_count: number
+  total_quantity: number
 }
 
 // =============================================================================
