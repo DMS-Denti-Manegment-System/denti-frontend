@@ -19,10 +19,20 @@ export const useUsers = () => {
   // Yeni personel davet et
   const inviteMutation = useMutation({
     mutationFn: (data: InviteUserPayload) => 
-      userApi.invite(data),
+      userApi.inviteUser(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       message.success('Davetiye başarıyla gönderildi.');
+    },
+  });
+
+  // Direkt kullanıcı oluştur (Süper Admin)
+  const createMutation = useMutation({
+    mutationFn: (data: any) => 
+      userApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      message.success('Kullanıcı başarıyla oluşturuldu.');
     },
   });
 
@@ -49,9 +59,11 @@ export const useUsers = () => {
     users: usersQuery.data || [],
     isLoading: usersQuery.isLoading,
     inviteUser: inviteMutation.mutateAsync,
+    createUser: createMutation.mutateAsync,
     updateUser: updateMutation.mutateAsync,
     deleteUser: deleteMutation.mutateAsync,
     isInviting: inviteMutation.isPending,
+    isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
   };

@@ -96,8 +96,8 @@ export const AppLayout: React.FC = () => {
       label: 'Raporlar',
       onClick: () => navigate('/reports')
     },
-    // Yönetim Alt Menüsü - Sadece Company Owner role sahip kullanıcılara gösterilir
-    ...(isCompanyOwner() ? [
+    // Yönetim Alt Menüsü - Company Owner veya Super Admin role sahip kullanıcılara gösterilir
+    ...((isCompanyOwner() || isSuperAdmin()) ? [
       {
         key: 'management',
         icon: <SettingOutlined />,

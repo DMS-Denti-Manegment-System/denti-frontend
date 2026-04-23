@@ -14,6 +14,7 @@ import { useUsers } from '../hooks/useUsers';
 import { User, UpdateUserPayload, InviteUserPayload } from '../types/user.types';
 import { UserEditModal } from '../components/UserEditModal';
 import { UserInviteModal } from '../components/UserInviteModal';
+import { UserCreateModal } from '../components/UserCreateModal';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title, Text } = Typography;
@@ -23,15 +24,18 @@ export const UserManagementPage: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const {
     users,
     isLoading,
     inviteUser,
+    createUser,
     updateUser,
     deleteUser,
     isInviting,
+    isCreating,
     isUpdating,
   } = useUsers();
 
@@ -64,6 +68,15 @@ export const UserManagementPage: React.FC = () => {
       setIsInviteModalOpen(false);
     } catch (error) {
       console.error('Invite error:', error);
+    }
+  };
+
+  const handleCreate = async (values: any) => {
+    try {
+      await createUser(values);
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error('Create error:', error);
     }
   };
 
@@ -149,14 +162,24 @@ export const UserManagementPage: React.FC = () => {
           </Space>
         </Col>
         <Col>
-          <Button 
-            type="primary" 
-            icon={<UserAddOutlined />} 
-            onClick={() => setIsInviteModalOpen(true)}
-            size="large"
-          >
-            Yeni Personel Davet Et
-          </Button>
+          <Space>
+            <Button 
+              type="default" 
+              icon={<UserAddOutlined />} 
+              onClick={() => setIsInviteModalOpen(true)}
+              size="large"
+            >
+              Davet Gönder
+            </Button>
+            <Button 
+              type="primary" 
+              icon={<UserAddOutlined />} 
+              onClick={() => setIsCreateModalOpen(true)}
+              size="large"
+            >
+              Yeni Kullanıcı Ekle
+            </Button>
+          </Space>
         </Col>
       </Row>
 
@@ -201,6 +224,13 @@ export const UserManagementPage: React.FC = () => {
         onCancel={() => setIsInviteModalOpen(false)}
         onSubmit={handleInvite}
         loading={isInviting}
+      />
+
+      <UserCreateModal
+        open={isCreateModalOpen}
+        onCancel={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreate}
+        loading={isCreating}
       />
     </div>
   );

@@ -1,67 +1,73 @@
-// src/modules/users/components/UserEditModal.tsx
+// src/modules/users/components/UserCreateModal.tsx
 
-import React, { useEffect } from 'react';
-import { Modal, Form, Input, Select, Switch, Space, Typography } from 'antd';
-import { User, UpdateUserPayload } from '../types/user.types';
+import React from 'react';
+import { Modal, Form, Input, Select, Switch } from 'antd';
+import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons';
 import { useRoles } from '../../roles/hooks/useRoles';
 
-const { Text } = Typography;
-
-interface UserEditModalProps {
+interface UserCreateModalProps {
   open: boolean;
   onCancel: () => void;
-  onSubmit: (values: UpdateUserPayload) => void;
-  initialValues: User | null;
+  onSubmit: (values: any) => void;
   loading: boolean;
 }
 
-export const UserEditModal: React.FC<UserEditModalProps> = ({
+export const UserCreateModal: React.FC<UserCreateModalProps> = ({
   open,
   onCancel,
   onSubmit,
-  initialValues,
   loading,
 }) => {
   const [form] = Form.useForm();
   const { roles, isLoading: isRolesLoading } = useRoles();
 
-  useEffect(() => {
-    if (open && initialValues) {
-      form.setFieldsValue({
-        name: initialValues.name,
-        is_active: initialValues.is_active,
-        role_id: initialValues.roles[0]?.id, // İlk rolün ID'sini al
-      });
-    } else {
-      form.resetFields();
-    }
-  }, [open, initialValues, form]);
-
   return (
     <Modal
-      title="Personel Düzenle"
+      title="Yeni Kullanıcı Ekle"
       open={open}
       onCancel={onCancel}
       onOk={() => form.submit()}
       confirmLoading={loading}
       destroyOnClose
+      okText="Kullanıcıyı Oluştur"
+      cancelText="İptal"
     >
       <Form
         form={form}
         layout="vertical"
-        onFinish={onSubmit}
+        onFinish={(values) => {
+          onSubmit(values);
+          form.resetFields();
+        }}
       >
-        <div style={{ marginBottom: '24px', padding: '12px', background: '#f5f5f5', borderRadius: '8px' }}>
-          <Text type="secondary">E-posta Adresi:</Text>
-          <div style={{ fontWeight: 500 }}>{initialValues?.email}</div>
-        </div>
-
         <Form.Item
           label="Ad Soyad"
           name="name"
           rules={[{ required: true, message: 'Lütfen ad soyad giriniz.' }]}
         >
-          <Input placeholder="Örn: Dr. Ahmet Yılmaz" />
+          <Input prefix={<UserOutlined />} placeholder="Örn: Ahmet Yılmaz" />
+        </Form.Item>
+
+        <Form.Item
+          label="E-posta Adresi"
+          name="email"
+          rules={[
+            { required: true, message: 'Lütfen e-posta adresi giriniz.' },
+            { type: 'email', message: 'Geçerli bir e-posta giriniz.' }
+          ]}
+        >
+          <Input prefix={<MailOutlined />} placeholder="Örn: ahmet@klinik.com" />
+        </Form.Item>
+
+        <Form.Item
+          label="Şifre"
+          name="password"
+          rules={[
+            { required: true, message: 'Lütfen bir şifre belirleyiniz.' },
+            { min: 8, message: 'Şifre en az 8 karakter olmalıdır.' }
+          ]}
+        >
+          <Input.Password prefix={<LockOutlined />} placeholder="Şifre" />
         </Form.Item>
 
         <Form.Item
@@ -85,6 +91,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
           label="Hesap Durumu"
           name="is_active"
           valuePropName="checked"
+          initialValue={true}
         >
           <Switch 
             checkedChildren="Aktif" 
