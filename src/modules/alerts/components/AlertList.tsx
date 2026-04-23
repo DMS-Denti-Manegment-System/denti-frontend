@@ -9,15 +9,17 @@ import {
   Select, 
   Button,
   Space,
-  Empty,
-  Spin,
   Typography,
   DatePicker,
   Checkbox,
   Modal,
   Form,
   Badge,
-  Affix
+  Affix,
+  Table,
+  Tag,
+  Tooltip,
+  Spin
 } from 'antd'
 import { 
   FilterOutlined,
@@ -26,16 +28,14 @@ import {
   DeleteOutlined,
   CheckOutlined,
   CloseOutlined,
-  ExclamationCircleOutlined,
-  SettingOutlined
+  ExclamationCircleOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useAlerts, useAlertStats } from '../hooks/useAlerts'
 import { useClinics } from '@/modules/clinics/hooks/useClinics'
-import { AlertCard } from './AlertCard'
 import { AlertDashboard } from './AlertDashboard'
 import { AlertSeverityBadge } from './AlertSeverityBadge'
-import { AlertFilters, AlertType, AlertSeverity } from '../types/alert.types'
+import { AlertFilters, AlertType, AlertSeverity, Alert } from '../types/alert.types'
 
 const { Search } = Input
 const { Option } = Select
@@ -61,7 +61,7 @@ export const AlertList: React.FC<AlertListProps> = ({
   const [selectedAlerts, setSelectedAlerts] = useState<number[]>([])
   const [bulkActionModalVisible, setBulkActionModalVisible] = useState(false)
   const [bulkActionType, setBulkActionType] = useState<'resolve' | 'dismiss' | 'delete'>('resolve')
-  const [bulkModalKey, setBulkModalKey] = useState(0) // Modal'ı yeniden mount etmek için
+  const [bulkModalKey, setBulkModalKey] = useState(0)
 
   const { 
     alerts, 
@@ -69,71 +69,44 @@ export const AlertList: React.FC<AlertListProps> = ({
     refetch,
     bulkResolveAlerts,
     bulkDismissAlerts,
-    isBulkProcessing
+    isBulkProcessing,
+    resolveAlert,
+    dismissAlert,
+    deleteAlert
   } = useAlerts(filters)
   
-  const { data: stats } = useAlertStats(defaultClinicId)
+  const { data: stats } = useAlertStats(filters.clinic_id)
   const { clinics } = useClinics()
 
-  // Null check ile güvenli filtreleme
   const activeClinics = useMemo(() => {
     if (!clinics || clinics.length === 0) return []
     return clinics.filter((clinic) => clinic.is_active)
   }, [clinics])
 
-  const handleFilterChange = (key: keyof AlertFilters, value: string | number | boolean | undefined) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }))
+  const handleFilterChange = (key: keyof AlertFilters, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
     setSelectedAlerts([])
   }
 
-  const handleDateRangeChange = (dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null) => {
+  const handleDateRangeChange = (dates: any) => {
     if (dates && dates.length === 2 && dates[0] && dates[1]) {
       setFilters(prev => ({
         ...prev,
-        date_from: dates[0] ? dates[0].format('YYYY-MM-DD') : undefined,
-        date_to: dates[1] ? dates[1].format('YYYY-MM-DD') : undefined
+        date_from: dates[0].format('YYYY-MM-DD'),
+        date_to: dates[1].format('YYYY-MM-DD')
       }))
     } else {
-      setFilters(prev => ({
-        ...prev,
-        date_from: undefined,
-        date_to: undefined
-      }))
+      setFilters(prev => ({ ...prev, date_from: undefined, date_to: undefined }))
     }
   }
 
   const clearFilters = () => {
-    setFilters({
-      clinic_id: defaultClinicId,
-      is_resolved: false
-    })
+    setFilters({ clinic_id: defaultClinicId, is_resolved: false })
     setSelectedAlerts([])
-  }
-
-  const toggleSelectAlert = (alertId: number) => {
-    setSelectedAlerts(prev => 
-      prev.includes(alertId) 
-        ? prev.filter(id => id !== alertId)
-        : [...prev, alertId]
-    )
-  }
-
-  const selectAllAlerts = () => {
-    if (!alerts || alerts.length === 0) return
-    
-    if (selectedAlerts.length === alerts.length) {
-      setSelectedAlerts([])
-    } else {
-      setSelectedAlerts(alerts.map((alert) => alert.id))
-    }
   }
 
   const handleBulkAction = (action: 'resolve' | 'dismiss' | 'delete') => {
     if (selectedAlerts.length === 0) return
-    
     setBulkActionType(action)
     setBulkActionModalVisible(true)
   }
@@ -143,39 +116,25 @@ export const AlertList: React.FC<AlertListProps> = ({
       if (bulkActionType === 'resolve') {
         await bulkResolveAlerts({
           ids: selectedAlerts,
-          data: {
-            resolved_by: currentUser,
-            resolution_notes: values?.resolution_notes
-          }
+          data: { resolved_by: currentUser, resolution_notes: values?.resolution_notes }
         })
       } else if (bulkActionType === 'dismiss') {
         await bulkDismissAlerts(selectedAlerts)
       }
-      
       setBulkActionModalVisible(false)
       setSelectedAlerts([])
-      // Modal'ı yeniden mount et (form otomatik temizlenir)
       setBulkModalKey(prev => prev + 1)
     } catch (error) {
       console.error('Bulk action error:', error)
     }
   }
 
-  const getFilteredAlertCount = () => {
-    return alerts?.length || 0
-  }
-
-  const getPendingCount = () => {
-    return stats?.total_active || 0
-  }
-
   const alertTypeOptions: { value: AlertType; label: string }[] = [
     { value: 'low_stock', label: 'Düşük Stok' },
     { value: 'critical_stock', label: 'Kritik Stok' },
-    { value: 'out_of_stock', label: 'Stok Bitti' },
-    { value: 'expiry_warning', label: 'Son Kullanma Uyarısı' },
-    { value: 'expiry_critical', label: 'Son Kullanma Kritik' },
     { value: 'expired', label: 'Süresi Geçmiş' },
+    { value: 'near_expiry', label: 'Son Kullanma Yaklaşıyor' },
+    { value: 'out_of_stock', label: 'Stok Bitti' },
     { value: 'stock_request', label: 'Stok Talebi' },
     { value: 'stock_transfer', label: 'Stok Transferi' },
     { value: 'system', label: 'Sistem' }
@@ -190,14 +149,12 @@ export const AlertList: React.FC<AlertListProps> = ({
 
   return (
     <div>
-      {/* Dashboard */}
       {showDashboard && (
         <div style={{ marginBottom: 24 }}>
-          <AlertDashboard clinicId={defaultClinicId} />
+          <AlertDashboard clinicId={filters.clinic_id} />
         </div>
       )}
 
-      {/* Filtreler */}
       <Card size="small" style={{ marginBottom: 16 }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={8} md={6}>
@@ -206,10 +163,8 @@ export const AlertList: React.FC<AlertListProps> = ({
               allowClear
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              onSearch={(value) => handleFilterChange('search', value)}
             />
           </Col>
-
           <Col xs={12} sm={6} md={4}>
             <Select
               placeholder="Klinik"
@@ -219,165 +174,86 @@ export const AlertList: React.FC<AlertListProps> = ({
               onChange={(value) => handleFilterChange('clinic_id', value)}
             >
               {activeClinics.map((clinic) => (
-                <Option key={clinic.id} value={clinic.id}>
-                  {clinic.name}
-                </Option>
+                <Option key={clinic.id} value={clinic.id}>{clinic.name}</Option>
               ))}
             </Select>
           </Col>
-
           <Col xs={12} sm={6} md={4}>
             <Select
               placeholder="Tip"
               allowClear
               style={{ width: '100%' }}
               value={filters.type}
-              onChange={(value) => handleFilterChange('type', value as AlertType)}
+              onChange={(value) => handleFilterChange('type', value)}
             >
-              {alertTypeOptions.map((option) => (
-                <Option key={option.value} value={option.value}>
-                  {option.label}
-                </Option>
+              {alertTypeOptions.map((opt) => (
+                <Option key={opt.value} value={opt.value}>{opt.label}</Option>
               ))}
             </Select>
           </Col>
-
           <Col xs={12} sm={6} md={3}>
             <Select
               placeholder="Önem"
               allowClear
               style={{ width: '100%' }}
               value={filters.severity}
-              onChange={(value) => handleFilterChange('severity', value as AlertSeverity)}
+              onChange={(value) => handleFilterChange('severity', value)}
             >
-              {severityOptions.map((option) => (
-                <Option key={option.value} value={option.value}>
-                  <AlertSeverityBadge severity={option.value} size="small" />
+              {severityOptions.map((opt) => (
+                <Option key={opt.value} value={opt.value}>
+                  <AlertSeverityBadge severity={opt.value} size="small" />
                 </Option>
               ))}
             </Select>
           </Col>
-
           <Col xs={12} sm={8} md={4}>
-            <RangePicker
-              style={{ width: '100%' }}
-              format="DD/MM/YYYY"
-              placeholder={['Başlangıç', 'Bitiş']}
-              onChange={handleDateRangeChange}
-            />
+            <RangePicker style={{ width: '100%' }} format="DD/MM/YYYY" onChange={handleDateRangeChange} />
           </Col>
-
           <Col xs={24} sm={8} md={3}>
             <Space>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={() => refetch()}
-                loading={isLoading}
-                title="Yenile"
-              />
-              <Button
-                icon={<FilterOutlined />}
-                onClick={clearFilters}
-                title="Filtreleri Temizle"
-              />
+              <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={isLoading} />
+              <Button icon={<FilterOutlined />} onClick={clearFilters} />
             </Space>
           </Col>
         </Row>
-
         <Row style={{ marginTop: 12 }}>
           <Col span={24}>
             <Space>
               <Checkbox
                 checked={filters.is_resolved === false}
                 onChange={(e) => handleFilterChange('is_resolved', e.target.checked ? false : undefined)}
-              >
-                Sadece aktif uyarılar
-              </Checkbox>
+              >Sadece aktif</Checkbox>
               <Checkbox
                 checked={filters.is_resolved === true}
                 onChange={(e) => handleFilterChange('is_resolved', e.target.checked ? true : undefined)}
-              >
-                Sadece çözülmüş uyarılar
-              </Checkbox>
+              >Sadece çözülmüş</Checkbox>
             </Space>
           </Col>
         </Row>
       </Card>
 
-      {/* Başlık ve İstatistikler */}
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
         <Col>
           <Title level={4} style={{ margin: 0 }}>
             <BellOutlined style={{ marginRight: 8, color: '#1890ff' }} />
             Uyarılar
-            {getFilteredAlertCount() > 0 && (
-              <Badge 
-                count={getFilteredAlertCount()} 
-                style={{ marginLeft: 8 }}
-                showZero={false}
-              />
+            {alerts && alerts.length > 0 && (
+              <Badge count={alerts.length} style={{ marginLeft: 8 }} />
             )}
           </Title>
-          <div style={{ marginTop: 4 }}>
-            <Space size="large">
-              <span style={{ color: '#666', fontSize: '14px' }}>
-                Toplam: {getFilteredAlertCount()} uyarı
-              </span>
-              <span style={{ color: '#fa8c16', fontSize: '14px' }}>
-                Bekleyen: {getPendingCount()} uyarı
-              </span>
-            </Space>
-          </div>
-        </Col>
-        <Col>
-          <Space>
-            <Button icon={<SettingOutlined />} title="Uyarı Ayarları">
-              Ayarlar
-            </Button>
-          </Space>
         </Col>
       </Row>
 
-      {/* Toplu İşlemler */}
       {selectedAlerts.length > 0 && (
         <Affix offsetTop={10}>
           <Card size="small" style={{ marginBottom: 16, backgroundColor: '#e6f7ff', borderColor: '#91d5ff' }}>
             <Row justify="space-between" align="middle">
+              <Col><span>{selectedAlerts.length} uyarı seçildi</span></Col>
               <Col>
                 <Space>
-                  <span>{selectedAlerts.length} uyarı seçildi</span>
-                  <Button size="small" type="link" onClick={() => setSelectedAlerts([])}>
-                    Seçimi Temizle
-                  </Button>
-                </Space>
-              </Col>
-              <Col>
-                <Space>
-                  <Button
-                    size="small"
-                    icon={<CheckOutlined />}
-                    onClick={() => handleBulkAction('resolve')}
-                    loading={isBulkProcessing}
-                  >
-                    Toplu Çözümle
-                  </Button>
-                  <Button
-                    size="small"
-                    icon={<CloseOutlined />}
-                    onClick={() => handleBulkAction('dismiss')}
-                    loading={isBulkProcessing}
-                  >
-                    Toplu Yok Say
-                  </Button>
-                  <Button
-                    size="small"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleBulkAction('delete')}
-                    loading={isBulkProcessing}
-                  >
-                    Toplu Sil
-                  </Button>
+                  <Button size="small" icon={<CheckOutlined />} onClick={() => handleBulkAction('resolve')} loading={isBulkProcessing}>Toplu Çözümle</Button>
+                  <Button size="small" icon={<CloseOutlined />} onClick={() => handleBulkAction('dismiss')} loading={isBulkProcessing}>Toplu Yok Say</Button>
+                  <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleBulkAction('delete')} loading={isBulkProcessing}>Toplu Sil</Button>
                 </Space>
               </Col>
             </Row>
@@ -385,126 +261,98 @@ export const AlertList: React.FC<AlertListProps> = ({
         </Affix>
       )}
 
-      {/* Uyarı Listesi */}
-      <div>
-        {isLoading ? (
-          <Card>
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <Spin size="large" />
-              <div style={{ marginTop: 16 }}>Uyarılar yükleniyor...</div>
-            </div>
-          </Card>
-        ) : !alerts || alerts.length === 0 ? (
-          <Card>
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={
-                Object.keys(filters).length > 1 || filters.search ? 
-                "Filtrelere uygun uyarı bulunamadı" : 
-                "Henüz uyarı bulunmuyor"
-              }
-              style={{ padding: '40px' }}
-            >
-              {Object.keys(filters).length > 1 && (
-                <Button onClick={clearFilters}>
-                  Filtreleri Temizle
-                </Button>
-              )}
-            </Empty>
-          </Card>
-        ) : (
-          <>
-            {/* Tümünü Seç */}
-            <div style={{ marginBottom: 12 }}>
-              <Checkbox
-                indeterminate={selectedAlerts.length > 0 && selectedAlerts.length < alerts.length}
-                checked={alerts.length > 0 && selectedAlerts.length === alerts.length}
-                onChange={selectAllAlerts}
-              >
-                Tümünü Seç ({alerts.length} uyarı)
-              </Checkbox>
-            </div>
-
-            <Row gutter={[16, 16]}>
-              {alerts.map((alert) => (
-                <Col xs={24} lg={12} xl={8} key={alert.id}>
-                  <div style={{ position: 'relative' }}>
-                    <Checkbox
-                      style={{ 
-                        position: 'absolute', 
-                        top: 8, 
-                        left: 8, 
-                        zIndex: 10,
-                        backgroundColor: 'white',
-                        borderRadius: '4px',
-                        padding: '2px'
-                      }}
-                      checked={selectedAlerts.includes(alert.id)}
-                      onChange={() => toggleSelectAlert(alert.id)}
+      <Card bodyStyle={{ padding: 0 }}>
+        <Table
+          dataSource={alerts || []}
+          loading={isLoading}
+          rowKey="id"
+          rowSelection={{
+            selectedRowKeys: selectedAlerts,
+            onChange: (keys) => setSelectedAlerts(keys as number[])
+          }}
+          columns={[
+            {
+              title: 'Önem',
+              dataIndex: 'severity',
+              width: 100,
+              render: (sev) => <AlertSeverityBadge severity={sev} />
+            },
+            {
+              title: 'Ürün / Mesaj',
+              render: (_, record) => (
+                <div>
+                  <div style={{ fontWeight: 'bold', color: '#1890ff' }}>{record.title}</div>
+                  <div style={{ fontSize: '12px', color: '#666' }}>{record.message}</div>
+                </div>
+              )
+            },
+            {
+              title: 'Klinik',
+              dataIndex: ['clinic', 'name'],
+              render: (name) => <Tag color="blue">{name}</Tag>
+            },
+            {
+              title: 'Tür',
+              dataIndex: 'type',
+              render: (type) => <Tag>{alertTypeOptions.find(o => o.value === type)?.label || type}</Tag>
+            },
+            {
+              title: 'Tarih',
+              dataIndex: 'created_at',
+              render: (date) => dayjs(date).format('DD/MM/YYYY HH:mm')
+            },
+            {
+              title: 'İşlemler',
+              width: 150,
+              render: (_, record) => (
+                <Space>
+                  {!record.is_resolved && (
+                    <Tooltip title="Çözümle">
+                      <Button size="small" type="primary" ghost icon={<CheckOutlined />} 
+                        onClick={() => Modal.confirm({
+                          title: 'Uyarıyı Çözümle',
+                          content: 'Bu uyarıyı çözüldü olarak işaretlemek istediğinize emin misiniz?',
+                          onOk: () => resolveAlert({ id: record.id, data: { resolved_by: currentUser } })
+                        })} 
+                      />
+                    </Tooltip>
+                  )}
+                  <Tooltip title="Sil">
+                    <Button size="small" danger icon={<DeleteOutlined />} 
+                      onClick={() => Modal.confirm({
+                        title: 'Uyarıyı Sil',
+                        content: 'Bu uyarıyı kalıcı olarak silmek istediğinize emin misiniz?',
+                        onOk: () => deleteAlert(record.id)
+                      })} 
                     />
-                    <AlertCard
-                      alert={alert}
-                      currentUser={currentUser}
-                      showActions={true}
-                    />
-                  </div>
-                </Col>
-              ))}
-            </Row>
-          </>
-        )}
-      </div>
+                  </Tooltip>
+                </Space>
+              )
+            }
+          ]}
+        />
+      </Card>
 
-      {/* Toplu İşlem Modal */}
       <Modal
         key={`bulk-modal-${bulkModalKey}`}
-        title={`Toplu ${
-          bulkActionType === 'resolve' ? 'Çözümleme' : 
-          bulkActionType === 'dismiss' ? 'Yok Sayma' : 'Silme'
-        }`}
+        title={`Toplu ${bulkActionType === 'resolve' ? 'Çözümleme' : bulkActionType === 'dismiss' ? 'Yok Sayma' : 'Silme'}`}
         open={bulkActionModalVisible}
         onCancel={() => setBulkActionModalVisible(false)}
         footer={null}
         width={500}
       >
-        <Form
-          layout="vertical"
-          onFinish={executeBulkAction}
-        >
+        <Form layout="vertical" onFinish={executeBulkAction}>
           <div style={{ marginBottom: 16 }}>
             <ExclamationCircleOutlined style={{ color: '#fa8c16', marginRight: 8 }} />
-            <span>{selectedAlerts.length} uyarı {
-              bulkActionType === 'resolve' ? 'çözümlenecek' : 
-              bulkActionType === 'dismiss' ? 'yok sayılacak' : 'silinecek'
-            }. Devam edilsin mi?</span>
+            <span>{selectedAlerts.length} uyarı işlenecek. Devam edilsin mi?</span>
           </div>
-          
           {bulkActionType === 'resolve' && (
-            <Form.Item
-              label="Çözüm Notları (Opsiyonel)"
-              name="resolution_notes"
-            >
-              <TextArea
-                rows={4}
-                placeholder="Toplu çözümleme hakkında notlar..."
-              />
-            </Form.Item>
+            <Form.Item label="Notlar" name="resolution_notes"><TextArea rows={4} /></Form.Item>
           )}
-
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
             <Space>
-              <Button onClick={() => setBulkActionModalVisible(false)}>
-                İptal
-              </Button>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
-                loading={isBulkProcessing}
-                danger={bulkActionType === 'delete'}
-              >
-                {bulkActionType === 'resolve' ? 'Çözümle' : 
-                 bulkActionType === 'dismiss' ? 'Yok Say' : 'Sil'}
-              </Button>
+              <Button onClick={() => setBulkActionModalVisible(false)}>İptal</Button>
+              <Button type="primary" htmlType="submit" loading={isBulkProcessing} danger={bulkActionType === 'delete'}>Onayla</Button>
             </Space>
           </Form.Item>
         </Form>

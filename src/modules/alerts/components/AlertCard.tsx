@@ -59,27 +59,27 @@ export const AlertCard: React.FC<AlertCardProps> = ({
   }
 
   const getProgressColor = () => {
-    if (alert.current_value === undefined || alert.threshold_value === undefined) return '#1890ff'
+    if (alert.current_stock_level === undefined || alert.threshold_level === undefined) return '#1890ff'
     
-    const percentage = (alert.current_value / alert.threshold_value) * 100
+    const percentage = (alert.current_stock_level / alert.threshold_level) * 100
     if (percentage <= 25) return '#ff4d4f'
     if (percentage <= 50) return '#fa8c16'
     return '#52c41a'
   }
 
   const getStockProgress = () => {
-    if (!alert.stock || alert.current_value === undefined || alert.threshold_value === undefined) {
+    if (!alert.stock || alert.current_stock_level === undefined || alert.threshold_level === undefined) {
       return null
     }
 
-    const percentage = Math.min((alert.current_value / alert.threshold_value) * 100, 100)
+    const percentage = Math.min((alert.current_stock_level / alert.threshold_level) * 100, 100)
     
     return (
       <div style={{ marginTop: 12 }}>
         <Row justify="space-between" style={{ marginBottom: 4 }}>
           <Text style={{ fontSize: '12px' }}>Mevcut Stok</Text>
           <Text style={{ fontSize: '12px' }}>
-            {alert.current_value} / {alert.threshold_value} {alert.stock.unit}
+            {alert.current_stock_level} / {alert.threshold_level} {alert.stock.unit}
           </Text>
         </Row>
         <Progress

@@ -157,5 +157,16 @@ export const alertApi = {
     api.post('/stock-alerts/bulk/dismiss', { ids }),
 
   bulkDelete: (ids: number[]): Promise<ApiResponse<null>> =>
-    api.post('/stock-alerts/bulk/delete', { ids })
+    api.post('/stock-alerts/bulk/delete', { ids }),
+    
+  // Uyarıları senkronize et (yeniden tara)
+  sync: async (clinicId?: number): Promise<ApiResponse<{ count: number }>> => {
+    try {
+      const queryString = clinicId ? `?clinic_id=${clinicId}` : ''
+      return await api.post(`/stock-alerts/sync${queryString}`)
+    } catch (error) {
+      console.warn('Alert sync error:', error)
+      throw error
+    }
+  }
 }

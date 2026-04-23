@@ -19,7 +19,16 @@ export const useAlerts = (filters?: AlertFilters) => {
   } = useQuery({
     queryKey: ['alerts', filters],
     queryFn: () => alertApi.getAll(filters),
-    select: (data) => data.data,
+    select: (data) => {
+      if (!data.data) return [];
+      return data.data.map(alert => ({
+        ...alert,
+        severity: alert.severity || (
+          alert.type === 'critical_stock' || alert.type === 'expired' ? 'critical' : 
+          alert.type === 'low_stock' || alert.type === 'near_expiry' ? 'medium' : 'low'
+        )
+      }));
+    },
     enabled: true,
     staleTime: 5 * 60 * 1000, // 5 dakika
     refetchOnWindowFocus: true,
@@ -121,7 +130,20 @@ export const useAlerts = (filters?: AlertFilters) => {
     isResolving: resolveMutation.isPending,
     isDismissing: dismissMutation.isPending,
     isDeleting: deleteMutation.isPending,
-    isBulkProcessing: bulkResolveMutation.isPending || bulkDismissMutation.isPending
+    isDeleting: deleteMutation.isPending,
+    isBulkProcessing: bulkResolveMutation.isPending || bulkDismissMutation.isPending,
+    syncAlerts: async (clinicId?: number) => {
+      try {
+        const response = await alertApi.sync(clinicId);
+        queryClient.invalidateQueries({ queryKey: ['alerts'] });
+        queryClient.invalidateQueries({ queryKey: ['alertStats'] });
+        message.success(`${response.data.count} stok tarandı ve uyarılar güncellendi.`);
+        return response;
+      } catch (error) {
+        message.error('Uyarı senkronizasyonu başarısız oldu.');
+        throw error;
+      }
+    }
   }
 }
 
@@ -130,7 +152,16 @@ export const useActiveAlerts = (clinicId?: number) => {
   return useQuery({
     queryKey: ['alerts', 'active', clinicId],
     queryFn: () => alertApi.getActive(clinicId),
-    select: (data) => data.data,
+    select: (data) => {
+      if (!data.data) return [];
+      return data.data.map(alert => ({
+        ...alert,
+        severity: alert.severity || (
+          alert.type === 'critical_stock' || alert.type === 'expired' ? 'critical' : 
+          alert.type === 'low_stock' || alert.type === 'near_expiry' ? 'medium' : 'low'
+        )
+      }));
+    },
     enabled: true,
     staleTime: 1 * 60 * 1000, // 1 dakika
     refetchOnWindowFocus: true,

@@ -8,8 +8,8 @@ export interface Alert {
     message: string
     stock_id?: number
     clinic_id?: number
-    threshold_value?: number
-    current_value?: number
+    threshold_level?: number
+    current_stock_level?: number
     expiry_date?: string
     days_until_expiry?: number
     status: AlertStatus
@@ -69,8 +69,8 @@ export interface Alert {
     message: string
     stock_id?: number
     clinic_id?: number
-    threshold_value?: number
-    current_value?: number
+    threshold_level?: number
+    current_stock_level?: number
     expiry_date?: string
     days_until_expiry?: number
   }
