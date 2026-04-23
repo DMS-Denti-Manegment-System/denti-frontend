@@ -107,10 +107,10 @@ export const useStocks = (filters?: StockFilter) => {
     mutationFn: ({ id, data }: { id: number; data: StockAdjustmentRequest }) =>
       stockApi.adjustStock(id, data),
     onSuccess: (_, variables) => {
+      // Sadece stok listesi ve tekil stok verisi invalidate ediliyor
+      // stock-stats ve stock-levels 5 dk içinde otomatik expire olacak
       queryClient.invalidateQueries({ queryKey: ['stocks'] })
       queryClient.invalidateQueries({ queryKey: ['stocks', variables.id] })
-      queryClient.invalidateQueries({ queryKey: ['stock-stats'] })
-      queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok miktarı başarıyla ayarlandı!')
     },
     onError: (error: Error & { response?: { data?: { message?: string } } }) => {
@@ -122,10 +122,10 @@ export const useStocks = (filters?: StockFilter) => {
     mutationFn: ({ id, data }: { id: number; data: StockUsageRequest }) =>
       stockApi.useStock(id, data),
     onSuccess: (_, variables) => {
+      // Sadece stok listesi ve tekil stok verisi invalidate ediliyor
+      // stock-stats ve stock-levels 5 dk içinde otomatik expire olacak
       queryClient.invalidateQueries({ queryKey: ['stocks'] })
       queryClient.invalidateQueries({ queryKey: ['stocks', variables.id] })
-      queryClient.invalidateQueries({ queryKey: ['stock-stats'] })
-      queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok kullanımı başarıyla kaydedildi!')
     },
     onError: (error: Error & { response?: { data?: { message?: string } } }) => {

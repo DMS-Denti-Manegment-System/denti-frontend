@@ -4,13 +4,20 @@ import { useCallback, useMemo } from 'react';
 import { useAuthStore } from '../stores/authStore';
 
 export const usePermissions = () => {
-  const { user } = useAuthStore();
+  const { user, permissions } = useAuthStore();
 
+  /**
+   * Kullanıcının belirli bir role sahip olup olmadığını kontrol eder.
+   * Rol bilgisi localStorage'daki user.roles array'inden alınır.
+   *
+   * ⚠️ Not: Bu kontrol client-side'da yapılır ve UI gösterimi için kullanılır.
+   * Gerçek yetki kısıtlaması her zaman backend middleware/policy tarafından uygulanmalıdır.
+   */
   const hasRole = useCallback((roleName: string): boolean => {
     if (!user) return false;
-    
+
     const target = roleName.toLowerCase().trim();
-    
+
     // 1. Check legacy role field (string)
     if (user.role) {
       const r = user.role.toLowerCase();
@@ -30,13 +37,35 @@ export const usePermissions = () => {
         return false;
       });
     }
-    
+
     return false;
   }, [user]);
 
   const hasAnyRole = useCallback((roleNames: string[]): boolean => {
     return roleNames.some(role => hasRole(role));
   }, [hasRole]);
+
+  /**
+   * Kullanıcının belirli bir izne sahip olup olmadığını kontrol eder.
+   *
+   * ✅ Güvenli: İzin listesi backend'den alınır ve store'a yazılır.
+   * Client tarafında manipüle edilemez (localStorage'a persist edilmez).
+   *
+   * Kullanım:
+   *   const { hasPermission } = usePermissions()
+   *   if (hasPermission('approve-stock-request')) { ... }
+   */
+  const hasPermission = useCallback((permissionName: string): boolean => {
+    if (!user || !permissions || permissions.length === 0) return false;
+    return permissions.includes(permissionName);
+  }, [user, permissions]);
+
+  /**
+   * Kullanıcının belirtilen izinlerden en az birine sahip olup olmadığını kontrol eder.
+   */
+  const hasAnyPermission = useCallback((permissionNames: string[]): boolean => {
+    return permissionNames.some(p => hasPermission(p));
+  }, [hasPermission]);
 
   // Boolean values for easier internal logic
   const isSuperAdminVal = useMemo(() => hasRole('Super Admin'), [hasRole]);
@@ -45,11 +74,14 @@ export const usePermissions = () => {
   return {
     hasRole,
     hasAnyRole,
+    hasPermission,
+    hasAnyPermission,
     // Returned as functions for backward compatibility with AppLayout.tsx
     isSuperAdmin: () => isSuperAdminVal,
     isCompanyOwner: () => isCompanyOwnerVal,
     // Extra useful flags
     isAdmin: isSuperAdminVal || isCompanyOwnerVal,
     userRoles: user?.roles?.map((r: any) => typeof r === 'string' ? r : r.name) || (user?.role ? [user.role] : []),
+    userPermissions: permissions,
   };
 };

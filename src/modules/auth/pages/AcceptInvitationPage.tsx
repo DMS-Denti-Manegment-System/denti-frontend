@@ -36,8 +36,29 @@ export const AcceptInvitationPage: React.FC = () => {
         navigate('/login');
       }
     } catch (error: any) {
-      console.error('Accept invitation error:', error);
-      // Axios interceptor will handle the error message display
+      // ✅ Detaylı hata loglama — development'ta debug için yararlı
+      console.error('Davet kabulü başarısız:', {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+        url: error?.config?.url,
+        timestamp: new Date().toISOString(),
+      });
+
+      // ✅ HTTP status koduna göre kullanıcıya özel mesaj
+      const status = error?.response?.status;
+      if (status === 400) {
+        message.error('Davet kodu geçersiz veya süresi dolmuş.');
+      } else if (status === 404) {
+        message.error('Davet bulunamadı. Linki kontrol edin veya tekrar davet isteyin.');
+      } else if (status === 409) {
+        message.error('Bu e-posta adresi zaten kayıtlı. Lütfen giriş yapın.');
+      } else if (status === 422) {
+        // Axios interceptor zaten generic mesaj gösteriyor, burada ek bir şey yapmaya gerek yok
+      } else if (!status) {
+        message.error('Bağlantı hatası. İnternet bağlantınızı kontrol edin.');
+      }
+      // Diğer durumlarda axios interceptor’un global mesajı görüntülenmesine izin ver
     } finally {
       setLoading(false);
     }

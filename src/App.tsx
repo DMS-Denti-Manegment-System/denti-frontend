@@ -13,9 +13,11 @@ import { AntdStaticHelper } from './shared/utils/antdHelper'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 dakika
-      refetchOnWindowFocus: false,
-      retry: 1, // Oturum hatalarında çok fazla retry yapmasın
+      staleTime: 1000 * 60 * 1,   // ✅ 1 dakika (5 dk'ıdan indirildi)
+      gcTime: 1000 * 60 * 5,      // ✅ Garbage collect 5 dakika
+      refetchOnWindowFocus: true,  // ✅ Sekme'ye dönünce tazele
+      refetchOnReconnect: true,    // ✅ İnternet yeniden bağlanınca tazele
+      retry: 1,                    // Oturum hatalarında çok fazla retry yapmasın
     },
   },
 })

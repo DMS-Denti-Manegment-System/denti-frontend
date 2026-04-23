@@ -9,7 +9,15 @@ import { App } from 'antd';
 export const useAuth = () => {
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
-  const { setAuth, logout: storeLogout, user, isAuthenticated } = useAuthStore();
+  const {
+    setAuth,
+    logout: storeLogout,
+    setSessionValidated,
+    user,
+    isAuthenticated,
+    isSessionValidated,
+    permissions
+  } = useAuthStore();
 
   const login = async (credentials: LoginCredentials) => {
     setLoading(true);
@@ -22,7 +30,8 @@ export const useAuth = () => {
       }
 
       if (response.success && response.data) {
-        setAuth(response.data.user);
+        // ✅ Backend'den gelen permissions array'ini store'a yaz
+        setAuth(response.data.user, response.data.permissions ?? []);
         message.success('Giriş başarılı! Hoş geldiniz.');
         return { success: true };
       }
@@ -40,7 +49,8 @@ export const useAuth = () => {
     try {
       const response = await authApi.verify2fa(data);
       if (response.success && response.data) {
-        setAuth(response.data.user);
+        // ✅ 2FA sonrası da permissions backend'den alınıyor
+        setAuth(response.data.user, response.data.permissions ?? []);
         message.success('2FA doğrulaması başarılı! Hoş geldiniz.');
         return true;
       }
@@ -64,19 +74,33 @@ export const useAuth = () => {
     }
   };
 
+  /**
+   * Uygulama açılışında sunucu taraflı session geçerliliğini doğrular.
+   * Her iki durumda da (başarılı / 401) isSessionValidated = true yapılır
+   * böylece ProtectedRoute yükleme ekranından çıkar.
+   *
+   * Auth Flicker önlemi: localStorage'daki user var olsa bile,
+   * /auth/me 401 dönerse logout yapılır ve login sayfasına yönlendirilir.
+   */
   const checkSession = useCallback(async () => {
-    // We can check session status even if locally marked as authenticated
     try {
       const response = await authApi.me();
       if (response.success && response.data) {
-        setAuth(response.data.user);
+        // ✅ Session yenilenirken permissions de güncelleniyor
+        setAuth(response.data.user, response.data.permissions ?? []);
+      } else {
+        setSessionValidated(true);
       }
     } catch (error: any) {
       if (error.response?.status === 401) {
-        storeLogout();
+        storeLogout(); // localStorage + state temizle, isSessionValidated: false → tekrar false
+        setSessionValidated(true); // Ama artık "doğrulandı: giriş yok" durumu
+      } else {
+        // Ağ hatası vs. — yine de validated sayalım, login sayfasına atma
+        setSessionValidated(true);
       }
     }
-  }, [setAuth, storeLogout]);
+  }, [setAuth, storeLogout, setSessionValidated]);
 
   return {
     login,
@@ -85,6 +109,9 @@ export const useAuth = () => {
     checkSession,
     loading,
     user,
-    isAuthenticated
+    isAuthenticated,
+    isSessionValidated,
+    permissions
   };
 };
+

@@ -10,14 +10,21 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isSessionValidated } = useAuthStore();
   const location = useLocation();
 
+  // Session doğrulaması bitmeden karar verme — auth flicker önlemi
+  // App.tsx'teki checkSession() tamamlanana kadar loading spinner göster
+  if (!isSessionValidated) {
+    return <LoadingSpinner />;
+  }
+
   if (!isAuthenticated) {
-    // Giriş yapmamış kullanıcıyı login sayfasına yönlendir, 
+    // Giriş yapmamış kullanıcıyı login sayfasına yönlendir,
     // giriş yaptıktan sonra geri dönebilmesi için mevcut konumu sakla.
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;
 };
+

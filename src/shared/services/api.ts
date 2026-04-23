@@ -18,20 +18,35 @@ export const api = axios.create({
   timeout: 10000,
 })
 
+// CSRF singleton promise — eşzamanlı POST isteklerinde tek bir CSRF isteği atılır
+let csrfPromise: Promise<void> | null = null
+
 // CSRF check helper
 const ensureCsrf = async (configBaseURL: string) => {
-  if (!document.cookie.includes('XSRF-TOKEN')) {
-    // Determine the base URL for the sanctum endpoint
+  if (document.cookie.includes('XSRF-TOKEN')) return
+
+  // Race condition önleme: zaten devam eden bir CSRF isteği varsa onu bekle
+  if (!csrfPromise) {
     let baseUrl = configBaseURL || api.defaults.baseURL || 'http://localhost:8000/api'
-    
-    // Ensure we have an absolute URL for the domain extraction
     if (baseUrl.startsWith('/')) {
       baseUrl = window.location.origin + baseUrl
     }
-    
-    const domain = baseUrl.split('/api')[0]
-    await axios.get(`${domain}/sanctum/csrf-cookie`, { withCredentials: true })
+
+    // ✅ Güvenli URL parsing — split('/api')[0] yerine standart URL API kullanılıyor
+    // Bu sayede /api/v1, /api/v2 gibi path prefix'ler de doğru çalışır
+    const url = new URL(baseUrl)
+    const domain = `${url.protocol}//${url.host}`
+
+    csrfPromise = axios
+      .get(`${domain}/sanctum/csrf-cookie`, { withCredentials: true })
+      .then(() => {}) // Promise<AxiosResponse> → Promise<void> tip uyumu
+      .finally(() => {
+        // Başarılı veya başarısız olsun, bir sonraki login için sıfırla
+        csrfPromise = null
+      })
   }
+
+  await csrfPromise
 }
 
 // Request Interceptor
@@ -61,20 +76,25 @@ api.interceptors.response.use(
     } else if (error.response?.status === 403) {
       antdHelper.message?.error('Bu işlemi yapmaya yetkiniz yok!')
     } else if (error.response?.status === 404) {
-      // Background checks (like /user or /stats) might fail with 404 on some setups
-      console.warn('404 Error:', error.config.url)
+      // ✅ 404 artık kullanıcıya warning olarak gösteriliyor
+      const msg = error.response.data?.message || 'İstenen kayıt bulunamadı.'
+      antdHelper.message?.warning(msg)
+      console.warn('404 Error:', error.config?.url)
     } else if (error.response?.status === 419) {
       // 419 is often used for CSRF mismatch in Laravel
       antdHelper.message?.error('CSRF hatası, lütfen sayfayı yenileyin.')
     } else if (error.response?.status === 422) {
-      // Validation errors
+      // ✅ Validation hataları tek bir özet mesajla gösteriliyor
+      // Önceden: her hata ayrı ayrı gösteriliyordu → DB sütun adı gibi iç detaylar sızabilirdi
       const errors = error.response.data?.errors
-      if (errors) {
-        (Object.values(errors).flat() as string[]).forEach((err) => {
-          antdHelper.message?.error(err)
-        })
+      const backendMessage = error.response.data?.message
+
+      if (errors && Object.keys(errors).length > 0) {
+        antdHelper.message?.error('Girilen veriler geçerli değil. Lütfen formu kontrol edin.')
+      } else if (backendMessage) {
+        antdHelper.message?.error(backendMessage)
       } else {
-        antdHelper.message?.error(error.response.data?.message || 'Validation hatası!')
+        antdHelper.message?.error('Doğrulama hatası oluştu.')
       }
     } else if (error.response?.status >= 500) {
       antdHelper.message?.error('Sunucu hatası! Backend çalışıyor mu kontrol edin.')
@@ -82,7 +102,7 @@ api.interceptors.response.use(
       const msg = error.response?.data?.message || error.message || 'Bir hata oluştu!'
       antdHelper.message?.error(msg)
     }
-    
+
     return Promise.reject(error)
   }
 )
