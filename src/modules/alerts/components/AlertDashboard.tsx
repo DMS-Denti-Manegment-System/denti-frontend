@@ -10,7 +10,8 @@ import {
   Space,
   Typography,
   Alert as AntAlert,
-  Spin
+  Spin,
+  Tooltip
 } from 'antd'
 import { 
   BellOutlined,
@@ -52,41 +53,39 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ clinicId }) => {
 
   return (
     <div>
-      {/* Kritik Uyarı Banner */}
-      {criticalAlerts.length > 0 && (
-        <AntAlert
-          message={`${criticalAlerts.length} kritik uyarı var!`}
-          description="Hemen müdahale edilmesi gereken kritik uyarılar bulunmaktadır."
-          type="error"
-          icon={<FireOutlined />}
-          showIcon
-          style={{ marginBottom: 16 }}
-          action={
-            <Space>
-              <Text strong style={{ color: '#ff4d4f' }}>
-                Kritik: {criticalAlerts.length}
-              </Text>
-            </Space>
-          }
-        />
-      )}
-
-      {/* Yüksek Öncelik Uyarı Banner */}
-      {highAlerts.length > 0 && criticalAlerts.length === 0 && (
-        <AntAlert
-          message={`${highAlerts.length} yüksek öncelikli uyarı var`}
-          description="Dikkat edilmesi gereken uyarılar bulunmaktadır."
-          type="warning"
-          icon={<WarningOutlined />}
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {/* Kompakt Bildirim Hapları */}
+      <div style={{ marginBottom: 16 }}>
+        <Space size={[8, 8]} wrap>
+          {criticalAlerts.length > 0 && (
+            <Tooltip title="Hemen müdahale edilmesi gereken kritik uyarılar!">
+              <AntAlert
+                message={`${criticalAlerts.length} Kritik Uyarı`}
+                type="error"
+                showIcon
+                icon={<FireOutlined />}
+                style={{ padding: '4px 12px', borderRadius: '20px' }}
+              />
+            </Tooltip>
+          )}
+          
+          {highAlerts.length > 0 && (
+            <Tooltip title="Dikkat edilmesi gereken yüksek öncelikli uyarılar.">
+              <AntAlert
+                message={`${highAlerts.length} Yüksek Öncelik`}
+                type="warning"
+                showIcon
+                icon={<WarningOutlined />}
+                style={{ padding: '4px 12px', borderRadius: '20px' }}
+              />
+            </Tooltip>
+          )}
+        </Space>
+      </div>
 
       {/* İstatistik Kartları */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card styles={{ body: { padding: '16px' } }}>
             <Statistic
               title="Toplam Aktif Uyarı"
               value={stats?.total_active || 0}
@@ -97,7 +96,13 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ clinicId }) => {
         </Col>
         
         <Col xs={12} sm={8}>
-          <Card>
+          <Card 
+            styles={{ body: { padding: '16px' } }}
+            style={(stats?.low_stock || 0) > 0 ? { 
+              border: '1px solid #1890ff', 
+              boxShadow: '0 0 8px rgba(24, 144, 255, 0.2)' 
+            } : {}}
+          >
             <Statistic
               title="Düşük Stok"
               value={stats?.low_stock || 0}
@@ -108,7 +113,13 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ clinicId }) => {
         </Col>
 
         <Col xs={12} sm={8}>
-          <Card>
+          <Card 
+            styles={{ body: { padding: '16px' } }}
+            style={(stats?.critical_stock || 0) > 0 ? { 
+              border: '1px solid #ff4d4f', 
+              boxShadow: '0 0 8px rgba(255, 77, 79, 0.2)' 
+            } : {}}
+          >
             <Statistic
               title="Kritik Stok"
               value={stats?.critical_stock || 0}
@@ -119,9 +130,15 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ clinicId }) => {
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={12} sm={12}>
-          <Card>
+          <Card 
+            styles={{ body: { padding: '16px' } }}
+            style={(stats?.near_expiry || 0) > 0 ? { 
+              border: '1px solid #faad14', 
+              boxShadow: '0 0 8px rgba(250, 173, 20, 0.2)' 
+            } : {}}
+          >
             <Statistic
               title="Son Kullanması Yaklaşan"
               value={stats?.near_expiry || 0}
@@ -132,7 +149,13 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ clinicId }) => {
         </Col>
         
         <Col xs={12} sm={12}>
-          <Card>
+          <Card 
+            styles={{ body: { padding: '16px' } }}
+            style={(stats?.expired || 0) > 0 ? { 
+              border: '1px solid #595959', 
+              boxShadow: '0 0 8px rgba(89, 89, 89, 0.2)' 
+            } : {}}
+          >
             <Statistic
               title="Süresi Geçmiş"
               value={stats?.expired || 0}

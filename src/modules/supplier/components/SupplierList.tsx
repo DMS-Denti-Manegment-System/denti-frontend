@@ -57,7 +57,7 @@ export const SupplierList: React.FC = () => {
   } = useSuppliers(filters)
 
   const handleSearch = (value: string) => {
-    setFilters(prev => ({ ...prev, name: value }))
+    setFilters(prev => ({ ...prev, search: value }))
   }
 
   const handleFilterChange = (field: keyof SupplierFilter, value: string | boolean | undefined) => {
@@ -341,10 +341,10 @@ export const SupplierList: React.FC = () => {
             placeholder="Durum"
             style={{ width: '100%' }}
             allowClear
-            onChange={(value) => handleFilterChange('is_active', value)}
+            onChange={(value) => handleFilterChange('status', value)}
           >
-            <Option value={true}>Aktif</Option>
-            <Option value={false}>Pasif</Option>
+            <Option value="active">Aktif</Option>
+            <Option value="inactive">Pasif</Option>
           </Select>
         </Col>
         <Col span={8}>

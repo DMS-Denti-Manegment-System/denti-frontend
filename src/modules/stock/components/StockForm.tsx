@@ -88,7 +88,7 @@ export const StockForm: React.FC<StockFormProps> = ({
       <Row gutter={16}>
         <Col span={8}>
           <Form.Item
-            label="Birim"
+            label="Ana Birim (Kutu, Paket vb.)"
             name="unit"
             rules={STOCK_VALIDATION_RULES.unit}
           >
@@ -137,7 +137,7 @@ export const StockForm: React.FC<StockFormProps> = ({
           <>
             <Col span={8}>
               <Form.Item
-                label="Alt Birim Adı (Örn: Tüp, Doz)"
+                label="İçerik Birimi (Adet, Tüp, Doz vb.)"
                 name="sub_unit_name"
                 rules={STOCK_VALIDATION_RULES.sub_unit_name}
               >
@@ -147,7 +147,7 @@ export const StockForm: React.FC<StockFormProps> = ({
 
             <Col span={8}>
               <Form.Item
-                label="Çarpan (1 Kapalı Kutu/Ana Birim = Kaç Alt Birim?)"
+                label="Çarpan (1 Ana Birim = Kaç İçerik Birimi?)"
                 name="sub_unit_multiplier"
                 rules={STOCK_VALIDATION_RULES.sub_unit_multiplier}
               >
@@ -161,7 +161,7 @@ export const StockForm: React.FC<StockFormProps> = ({
       <Row gutter={16}>
         <Col span={hasSubUnit ? 6 : 8}>
           <Form.Item
-            label={`Mevcut Stok ${hasSubUnit ? '(Kapalı Kutu)' : ''}`}
+            label={`Mevcut Stok ${hasSubUnit ? '(Kapalı Paket/Kutu)' : ''}`}
             name="current_stock"
             rules={STOCK_VALIDATION_RULES.current_stock}
           >
@@ -176,7 +176,7 @@ export const StockForm: React.FC<StockFormProps> = ({
         {hasSubUnit && (
           <Col span={6}>
             <Form.Item
-              label={`Açık Kutudan Kalan (${form.getFieldValue('sub_unit_name') || 'Alt Birim'})`}
+              label={`Açık Paketten Kalan (${form.getFieldValue('sub_unit_name') || 'İçerik'})`}
               name="current_sub_stock"
               tooltip="Şu an halihazırda açılmış ve içinden bir miktar kullanılmış olan ana birimin içindeki kalan miktar."
             >

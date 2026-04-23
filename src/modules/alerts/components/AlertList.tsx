@@ -157,15 +157,16 @@ export const AlertList: React.FC<AlertListProps> = ({
 
       <Card size="small" style={{ marginBottom: 16 }}>
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} sm={8} md={6}>
+          <Col xs={24} md={8}>
             <Search
               placeholder="Başlık veya mesaj ara..."
               allowClear
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
+              style={{ width: '100%' }}
             />
           </Col>
-          <Col xs={12} sm={6} md={4}>
+          <Col xs={12} md={4}>
             <Select
               placeholder="Klinik"
               allowClear
@@ -178,7 +179,7 @@ export const AlertList: React.FC<AlertListProps> = ({
               ))}
             </Select>
           </Col>
-          <Col xs={12} sm={6} md={4}>
+          <Col xs={12} md={4}>
             <Select
               placeholder="Tip"
               allowClear
@@ -191,7 +192,7 @@ export const AlertList: React.FC<AlertListProps> = ({
               ))}
             </Select>
           </Col>
-          <Col xs={12} sm={6} md={3}>
+          <Col xs={12} md={4}>
             <Select
               placeholder="Önem"
               allowClear
@@ -206,18 +207,22 @@ export const AlertList: React.FC<AlertListProps> = ({
               ))}
             </Select>
           </Col>
-          <Col xs={12} sm={8} md={4}>
-            <RangePicker style={{ width: '100%' }} format="DD/MM/YYYY" onChange={handleDateRangeChange} />
-          </Col>
-          <Col xs={24} sm={8} md={3}>
-            <Space>
-              <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={isLoading} />
-              <Button icon={<FilterOutlined />} onClick={clearFilters} />
+          <Col xs={12} md={4}>
+            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+              <Button 
+                icon={<FilterOutlined />} 
+                onClick={clearFilters}
+              >
+                Temizle
+              </Button>
             </Space>
           </Col>
         </Row>
-        <Row style={{ marginTop: 12 }}>
-          <Col span={24}>
+        <Row gutter={[16, 16]} style={{ marginTop: 12 }}>
+          <Col xs={24} md={12}>
+            <RangePicker style={{ width: '100%' }} format="DD/MM/YYYY" onChange={handleDateRangeChange} />
+          </Col>
+          <Col xs={24} md={12}>
             <Space>
               <Checkbox
                 checked={filters.is_resolved === false}

@@ -1,7 +1,5 @@
-// src/modules/stock/components/StockAlerts.tsx
-
 import React from 'react'
-import { Alert } from 'antd'
+import { Alert, Space, Tooltip } from 'antd'
 import { Stock } from '../types/stock.types'
 
 interface StockAlertsProps {
@@ -15,37 +13,50 @@ export const StockAlerts: React.FC<StockAlertsProps> = ({
   lowStockItems,
   expiringItems,
 }) => {
-  return (
-    <>
-      {criticalStockItems && criticalStockItems.length > 0 && (
-        <Alert
-          message={`${criticalStockItems.length} ürün kritik seviyede!`}
-          description={`Bu ürünler: ${criticalStockItems.slice(0, 3).map(item => item.name).join(', ')}${criticalStockItems.length > 3 ? '...' : ''}`}
-          type="error"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
-      
-      {lowStockItems && lowStockItems.length > 0 && (
-        <Alert
-          message={`${lowStockItems.length} ürün düşük seviyede`}
-          description={`Bu ürünler: ${lowStockItems.slice(0, 3).map(item => item.name).join(', ')}${lowStockItems.length > 3 ? '...' : ''}`}
-          type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
+  const hasAlerts = (criticalStockItems?.length > 0) || (lowStockItems?.length > 0) || (expiringItems?.length > 0);
 
-      {expiringItems && expiringItems.length > 0 && (
-        <Alert
-          message={`${expiringItems.length} ürünün süresi 30 gün içinde doluyor`}
-          description={`Bu ürünler: ${expiringItems.slice(0, 3).map(item => item.name).join(', ')}${expiringItems.length > 3 ? '...' : ''}`}
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
-    </>
+  if (!hasAlerts) return null;
+
+  const getProductList = (items: Stock[]) => {
+    return items.map(item => item.name).join(', ');
+  };
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <Space size={[8, 8]} wrap>
+        {criticalStockItems && criticalStockItems.length > 0 && (
+          <Tooltip title={getProductList(criticalStockItems)}>
+            <Alert
+              message={`${criticalStockItems.length} Kritik Seviye`}
+              type="error"
+              showIcon
+              style={{ padding: '4px 12px', borderRadius: '20px' }}
+            />
+          </Tooltip>
+        )}
+        
+        {lowStockItems && lowStockItems.length > 0 && (
+          <Tooltip title={getProductList(lowStockItems)}>
+            <Alert
+              message={`${lowStockItems.length} Düşük Seviye`}
+              type="warning"
+              showIcon
+              style={{ padding: '4px 12px', borderRadius: '20px' }}
+            />
+          </Tooltip>
+        )}
+
+        {expiringItems && expiringItems.length > 0 && (
+          <Tooltip title={getProductList(expiringItems)}>
+            <Alert
+              message={`${expiringItems.length} Ürün SKT Yakın`}
+              type="info"
+              showIcon
+              style={{ padding: '4px 12px', borderRadius: '20px' }}
+            />
+          </Tooltip>
+        )}
+      </Space>
+    </div>
   )
 }

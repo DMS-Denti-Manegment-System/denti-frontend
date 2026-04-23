@@ -3,7 +3,7 @@
 import React from 'react'
 import { Card, Row, Col, Statistic } from 'antd'
 import { 
-  SettingOutlined,
+  DatabaseOutlined,
   WarningOutlined,
   ExclamationCircleOutlined,
   DollarOutlined
@@ -26,18 +26,24 @@ export const StockStats: React.FC<StockStatsProps> = ({ stats }) => {
 
   return (
     <Row gutter={16} style={{ marginBottom: 24 }}>
-      <Col span={6}>
-        <Card>
+      <Col xs={12} md={6}>
+        <Card styles={{ body: { padding: '16px' } }}>
           <Statistic 
             title="Ürün Adeti" 
             value={stats.total_items}
-            prefix={<SettingOutlined />}
+            prefix={<DatabaseOutlined />}
           />
         </Card>
       </Col>
       
-      <Col span={6}>
-        <Card>
+      <Col xs={12} md={6}>
+        <Card 
+          styles={{ body: { padding: '16px' } }}
+          style={stats.low_stock_items > 0 ? { 
+            border: '1px solid #faad14', 
+            boxShadow: '0 0 8px rgba(250, 173, 20, 0.2)' 
+          } : {}}
+        >
           <Statistic 
             title="Düşük Seviye" 
             value={stats.low_stock_items}
@@ -47,8 +53,14 @@ export const StockStats: React.FC<StockStatsProps> = ({ stats }) => {
         </Card>
       </Col>
       
-      <Col span={6}>
-        <Card>
+      <Col xs={12} md={6}>
+        <Card 
+          styles={{ body: { padding: '16px' } }}
+          style={stats.critical_stock_items > 0 ? { 
+            border: '1px solid #ff4d4f', 
+            boxShadow: '0 0 8px rgba(255, 77, 79, 0.2)' 
+          } : {}}
+        >
           <Statistic 
             title="Kritik Seviye" 
             value={stats.critical_stock_items}
@@ -58,8 +70,8 @@ export const StockStats: React.FC<StockStatsProps> = ({ stats }) => {
         </Card>
       </Col>
       
-      <Col span={6}>
-        <Card>
+      <Col xs={12} md={6}>
+        <Card styles={{ body: { padding: '16px' } }}>
           <Statistic 
             title="Toplam Değer" 
             value={stats.total_value}

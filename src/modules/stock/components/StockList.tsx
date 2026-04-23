@@ -109,7 +109,7 @@ export const StockList: React.FC = () => {
 
   // Event handlers
   const handleSearch = useCallback((value: string) => {
-    setFilters(prev => ({ ...prev, name: value }))
+    setFilters(prev => ({ ...prev, search: value }))
   }, [])
 
   const handleFilterChange = useCallback((field: keyof StockFilter, value: string | number | undefined) => {
@@ -227,7 +227,6 @@ export const StockList: React.FC = () => {
         onSearch={handleSearch}
         onFilterChange={handleFilterChange}
         onAdd={handleAdd}
-        onRefresh={refetch}
       />
 
       <Card styles={{ body: { padding: 0 } }}>

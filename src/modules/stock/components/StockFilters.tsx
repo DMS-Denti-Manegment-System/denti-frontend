@@ -12,14 +12,12 @@ interface StockFiltersProps {
   onSearch: (value: string) => void
   onFilterChange: (field: keyof StockFilter, value: string | number | undefined) => void
   onAdd: () => void
-  onRefresh: () => void
 }
 
 export const StockFilters: React.FC<StockFiltersProps> = ({
   onSearch,
   onFilterChange,
   onAdd,
-  onRefresh,
 }) => {
   const categoryOptions = [
     { label: 'Diş Hekimliği Malzemeleri', value: 'dental_materials' },
@@ -44,7 +42,7 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
   return (
     <Card style={{ marginBottom: 24 }}>
       <Row gutter={16} align="middle">
-        <Col span={8}>
+        <Col xs={24} md={6}>
           <Search
             placeholder="Stok adı ile ara..."
             onSearch={onSearch}
@@ -53,7 +51,7 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
           />
         </Col>
         
-        <Col span={4}>
+        <Col xs={12} md={5}>
           <Select
             placeholder="Kategori"
             style={{ width: '100%' }}
@@ -68,7 +66,7 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
           </Select>
         </Col>
         
-        <Col span={4}>
+        <Col xs={12} md={4}>
           <Select
             placeholder="Seviye"
             style={{ width: '100%' }}
@@ -83,7 +81,7 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
           </Select>
         </Col>
         
-        <Col span={4}>
+        <Col xs={12} md={4}>
           <Select
             placeholder="Durum"
             style={{ width: '100%' }}
@@ -96,22 +94,15 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
           </Select>
         </Col>
         
-        <Col span={4}>
-          <Space>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={onAdd}
-            >
-              Yeni Stok
-            </Button>
-            <Button 
-              icon={<ReloadOutlined />} 
-              onClick={onRefresh}
-            >
-              Yenile
-            </Button>
-          </Space>
+        <Col xs={12} md={5} style={{ textAlign: 'right' }}>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={onAdd}
+            block
+          >
+            Yeni Stok
+          </Button>
         </Col>
       </Row>
     </Card>
