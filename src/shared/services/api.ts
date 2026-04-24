@@ -93,6 +93,8 @@ api.interceptors.response.use(
       const url = error.config?.url || ''
       if (!url.includes('/auth/me') && !url.includes('/login') && !url.includes('/auth/logout')) {
         antdHelper.message?.error('Oturum süreniz doldu!')
+        // Global event fırlat (App.tsx dinleyecek)
+        window.dispatchEvent(new Event('auth:unauthorized'))
       }
     } else if (error.response?.status === 403) {
       antdHelper.message?.error('Bu işlemi yapmaya yetkiniz yok!')

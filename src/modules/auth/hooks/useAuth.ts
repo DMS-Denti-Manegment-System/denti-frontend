@@ -63,7 +63,7 @@ export const useAuth = () => {
     }
   };
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await authApi.logout();
     } catch (error) {
@@ -72,7 +72,7 @@ export const useAuth = () => {
       storeLogout();
       message.success('Başarıyla çıkış yapıldı.');
     }
-  };
+  }, [storeLogout, message]);
 
   /**
    * Uygulama açılışında sunucu taraflı session geçerliliğini doğrular.

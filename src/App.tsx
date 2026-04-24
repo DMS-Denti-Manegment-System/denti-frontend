@@ -23,11 +23,24 @@ const queryClient = new QueryClient({
 })
 
 const AppContent = () => {
-  const { checkSession } = useAuth();
+  const { checkSession, logout } = useAuth();
 
+  // Uygulama açılışında session kontrolü - Sadece 1 kez
   useEffect(() => {
     checkSession();
-  }, [checkSession]);
+  }, []); // Boş dependency array: sonsuz döngüyü önler
+
+  // 401 Unauthorized hatalarını dinle
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
+  }, [logout]);
 
   return <Router />
 }

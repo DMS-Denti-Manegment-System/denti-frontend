@@ -23,10 +23,22 @@ export const useStocks = (filters?: StockFilter) => {
   // Sadece güncellenen item'i listelerde bulup değiştiren yardımcı fonksiyon
   const updateItemInLists = (updatedItem: any) => {
     queryClient.setQueriesData({ queryKey: ['stocks'] }, (oldData: any) => {
-      // Eğer paginate yapısı varsa oldData.data, düz liste ise oldData kullanılır.
-      // Bizim yapıda getAll() .data dönüyor (yani liste array'in kendisi)
-      if (!oldData || !Array.isArray(oldData)) return oldData
-      return oldData.map((item: any) => item.id === updatedItem.id ? updatedItem : item)
+      if (!oldData) return oldData
+      
+      // Paginated yapı: { data: [...], meta: ..., links: ... }
+      if (oldData.data && Array.isArray(oldData.data)) {
+        return {
+          ...oldData,
+          data: oldData.data.map((item: any) => item.id === updatedItem.id ? updatedItem : item)
+        }
+      }
+
+      // Düz liste yapısı (array)
+      if (Array.isArray(oldData)) {
+        return oldData.map((item: any) => item.id === updatedItem.id ? updatedItem : item)
+      }
+
+      return oldData
     })
   }
 
