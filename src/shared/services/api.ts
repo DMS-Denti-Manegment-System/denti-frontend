@@ -105,13 +105,17 @@ api.interceptors.response.use(
       // 419 is often used for CSRF mismatch in Laravel
       antdHelper.message?.error('CSRF hatası, lütfen sayfayı yenileyin.')
     } else if (error.response?.status === 422) {
-      // ✅ Validation hataları tek bir özet mesajla gösteriliyor
-      // Önceden: her hata ayrı ayrı gösteriliyordu → DB sütun adı gibi iç detaylar sızabilirdi
       const errors = error.response.data?.errors
       const backendMessage = error.response.data?.message
 
       if (errors && Object.keys(errors).length > 0) {
-        antdHelper.message?.error('Girilen veriler geçerli değil. Lütfen formu kontrol edin.')
+        // İlk hatayı bul ve göster
+        const firstErrorKey = Object.keys(errors)[0];
+        const firstErrorMessage = Array.isArray(errors[firstErrorKey]) 
+          ? errors[firstErrorKey][0] 
+          : errors[firstErrorKey];
+          
+        antdHelper.message?.error(firstErrorMessage || 'Girilen veriler geçerli değil.');
       } else if (backendMessage) {
         antdHelper.message?.error(backendMessage)
       } else {

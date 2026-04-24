@@ -8,7 +8,7 @@ export const authApi = {
     api.post('/login', credentials),
 
   verify2fa: (data: TwoFactorPayload): Promise<AuthResponse> =>
-    api.post('/2fa/verify', data),
+    api.post('/auth/2fa/verify', data),
 
   logout: (): Promise<{ success: boolean; message: string }> => 
     api.post('/auth/logout'),
