@@ -116,7 +116,7 @@ export const StockTable: React.FC<StockTableProps> = ({
           </Text>
           {record.has_sub_unit && (
             <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 2 }}>
-              Toplam: {record.total_base_units || ((record.current_stock * (record.sub_unit_multiplier || 0)) + (record.current_sub_stock || 0))} {record.sub_unit_name}
+              Toplam: {record.total_base_units} {record.sub_unit_name}
             </div>
           )}
         </div>

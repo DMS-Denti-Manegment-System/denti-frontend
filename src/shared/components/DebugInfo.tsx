@@ -6,6 +6,7 @@ import { Card, Typography } from 'antd'
 const { Text } = Typography
 
 export const DebugInfo: React.FC = () => {
+  if (import.meta.env.MODE === 'production') return null;
   return (
     <Card title="Debug Info" style={{ margin: '16px 0' }}>
       <div>

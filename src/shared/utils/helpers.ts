@@ -55,3 +55,24 @@ export const formatStock = (
   
   return mainPart
 }
+
+/**
+ * Para birimini formatlar.
+ * Guard: null veya undefined gelirse "0,00" döner.
+ */
+export const formatCurrency = (value?: number | string | null, currency = '₺'): string => {
+  if (value === undefined || value === null || value === '') {
+    return `0,00 ${currency}`
+  }
+  
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value
+  
+  if (isNaN(numericValue)) {
+    return `0,00 ${currency}`
+  }
+
+  return new Intl.NumberFormat('tr-TR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numericValue) + ` ${currency}`
+}
