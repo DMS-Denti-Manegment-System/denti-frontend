@@ -40,8 +40,11 @@ const ensureCsrf = async (configBaseURL: string) => {
     csrfPromise = axios
       .get(`${domain}/sanctum/csrf-cookie`, { withCredentials: true })
       .then(() => {}) // Promise<AxiosResponse> → Promise<void> tip uyumu
+      .catch((error) => {
+        console.error('CSRF token alınamadı:', error)
+      })
       .finally(() => {
-        // Başarılı veya başarısız olsun, bir sonraki login için sıfırla
+        // Başarılı veya başarısız olsun, bir sonraki istek için sıfırla
         csrfPromise = null
       })
   }
