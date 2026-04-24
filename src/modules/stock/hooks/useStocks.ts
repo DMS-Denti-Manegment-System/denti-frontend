@@ -12,8 +12,23 @@ import {
 
 const STALE_TIME = 300000 // 5 dakika
 
+// Ortak hata işleyici
+const handleError = (defaultMsg: string) => (error: any) => {
+  message.error(error.response?.data?.message || defaultMsg)
+}
+
 export const useStocks = (filters?: StockFilter) => {
   const queryClient = useQueryClient()
+
+  // Sadece güncellenen item'i listelerde bulup değiştiren yardımcı fonksiyon
+  const updateItemInLists = (updatedItem: any) => {
+    queryClient.setQueriesData({ queryKey: ['stocks'] }, (oldData: any) => {
+      // Eğer paginate yapısı varsa oldData.data, düz liste ise oldData kullanılır.
+      // Bizim yapıda getAll() .data dönüyor (yani liste array'in kendisi)
+      if (!oldData || !Array.isArray(oldData)) return oldData
+      return oldData.map((item: any) => item.id === updatedItem.id ? updatedItem : item)
+    })
+  }
 
   const {
     data: stocks,
@@ -35,24 +50,22 @@ export const useStocks = (filters?: StockFilter) => {
       queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok başarıyla oluşturuldu!')
     },
-    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-      message.error(error.response?.data?.message || 'Stok oluşturulurken hata oluştu!')
-    }
+    onError: handleError('Stok oluşturulurken hata oluştu!')
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateStockRequest }) =>
       stockApi.update(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['stocks'] })
-      queryClient.invalidateQueries({ queryKey: ['stocks', variables.id] })
+    onSuccess: (response, variables) => {
+      // Optimistic cache update
+      updateItemInLists(response.data)
+      queryClient.setQueryData(['stocks', variables.id], response.data)
+      
       queryClient.invalidateQueries({ queryKey: ['stock-stats'] })
       queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok başarıyla güncellendi!')
     },
-    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-      message.error(error.response?.data?.message || 'Stok güncellenirken hata oluştu!')
-    }
+    onError: handleError('Stok güncellenirken hata oluştu!')
   })
 
   const deleteMutation = useMutation({
@@ -63,20 +76,16 @@ export const useStocks = (filters?: StockFilter) => {
       queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok başarıyla silindi!')
     },
-    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-      message.error(error.response?.data?.message || 'Stok silinirken hata oluştu!')
-    }
+    onError: handleError('Stok silinirken hata oluştu!')
   })
 
   const softDeleteMutation = useMutation({
     mutationFn: stockApi.softDelete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stocks'] })
+    onSuccess: (response) => {
+      updateItemInLists(response.data)
       message.success('Stok pasif duruma getirildi!')
     },
-    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-      message.error(error.response?.data?.message || 'Stok pasif yapılırken hata oluştu!')
-    }
+    onError: handleError('Stok pasif yapılırken hata oluştu!')
   })
 
   const hardDeleteMutation = useMutation({
@@ -87,50 +96,38 @@ export const useStocks = (filters?: StockFilter) => {
       queryClient.invalidateQueries({ queryKey: ['stock-levels'] })
       message.success('Stok kalıcı olarak silindi!')
     },
-    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-      message.error(error.response?.data?.message || 'Stok silinirken hata oluştu!')
-    }
+    onError: handleError('Stok silinirken hata oluştu!')
   })
 
   const reactivateMutation = useMutation({
     mutationFn: stockApi.reactivate,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stocks'] })
+    onSuccess: (response) => {
+      updateItemInLists(response.data)
       message.success('Stok tekrar aktif edildi!')
     },
-    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-      message.error(error.response?.data?.message || 'Stok aktif edilirken hata oluştu!')
-    }
+    onError: handleError('Stok aktif edilirken hata oluştu!')
   })
 
   const adjustStockMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: StockAdjustmentRequest }) =>
       stockApi.adjustStock(id, data),
-    onSuccess: (_, variables) => {
-      // Sadece stok listesi ve tekil stok verisi invalidate ediliyor
-      // stock-stats ve stock-levels 5 dk içinde otomatik expire olacak
-      queryClient.invalidateQueries({ queryKey: ['stocks'] })
-      queryClient.invalidateQueries({ queryKey: ['stocks', variables.id] })
+    onSuccess: (response, variables) => {
+      updateItemInLists(response.data)
+      queryClient.setQueryData(['stocks', variables.id], response.data)
       message.success('Stok miktarı başarıyla ayarlandı!')
     },
-    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-      message.error(error.response?.data?.message || 'Stok ayarlanırken hata oluştu!')
-    }
+    onError: handleError('Stok ayarlanırken hata oluştu!')
   })
 
   const useStockMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: StockUsageRequest }) =>
       stockApi.useStock(id, data),
-    onSuccess: (_, variables) => {
-      // Sadece stok listesi ve tekil stok verisi invalidate ediliyor
-      // stock-stats ve stock-levels 5 dk içinde otomatik expire olacak
-      queryClient.invalidateQueries({ queryKey: ['stocks'] })
-      queryClient.invalidateQueries({ queryKey: ['stocks', variables.id] })
+    onSuccess: (response, variables) => {
+      updateItemInLists(response.data)
+      queryClient.setQueryData(['stocks', variables.id], response.data)
       message.success('Stok kullanımı başarıyla kaydedildi!')
     },
-    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-      message.error(error.response?.data?.message || 'Stok kullanımı kaydedilirken hata oluştu!')
-    }
+    onError: handleError('Stok kullanımı kaydedilirken hata oluştu!')
   })
 
   return {

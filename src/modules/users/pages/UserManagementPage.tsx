@@ -1,6 +1,6 @@
 // src/modules/users/pages/UserManagementPage.tsx
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, Table, Tag, Badge, Button, Input, Space, Typography, Row, Col, Popconfirm, Avatar, App } from 'antd';
 import { 
   UserOutlined, 
@@ -15,6 +15,7 @@ import { User, UpdateUserPayload, InviteUserPayload } from '../types/user.types'
 import { UserEditModal } from '../components/UserEditModal';
 import { UserInviteModal } from '../components/UserInviteModal';
 import { UserCreateModal } from '../components/UserCreateModal';
+import { useDebounce } from '../../../shared/hooks/useDebounce';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title, Text } = Typography;
@@ -22,13 +23,18 @@ const { Title, Text } = Typography;
 export const UserManagementPage: React.FC = () => {
   const { message } = App.useApp();
   const [searchText, setSearchText] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  
+  const debouncedSearch = useDebounce(searchText, 500);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const {
-    users,
+    usersData,
     isLoading,
     inviteUser,
     createUser,
@@ -37,15 +43,15 @@ export const UserManagementPage: React.FC = () => {
     isInviting,
     isCreating,
     isUpdating,
-  } = useUsers();
+  } = useUsers({
+    page: currentPage,
+    per_page: pageSize,
+    search: debouncedSearch
+  });
 
-  // Arama filtresi
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => 
-      user.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchText.toLowerCase())
-    );
-  }, [users, searchText]);
+  // Safe data extraction
+  const tableData = usersData?.data || [];
+  const totalItems = usersData?.total || 0;
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);
@@ -200,12 +206,18 @@ export const UserManagementPage: React.FC = () => {
       <Card styles={{ body: { padding: 0 } }}>
         <Table 
           columns={columns} 
-          dataSource={filteredUsers} 
+          dataSource={tableData} 
           rowKey="id" 
           loading={isLoading}
           pagination={{
-            pageSize: 10,
+            current: currentPage,
+            pageSize: pageSize,
+            total: totalItems,
             showSizeChanger: true,
+            onChange: (page, size) => {
+              setCurrentPage(page);
+              setPageSize(size);
+            },
             showTotal: (total) => `Toplam ${total} personel`,
           }}
         />

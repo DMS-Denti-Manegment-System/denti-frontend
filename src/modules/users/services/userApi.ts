@@ -5,9 +5,9 @@ import { ApiResponse } from '../../../shared/types/common.types';
 import { User, UpdateUserPayload, InviteUserPayload } from '../types/user.types';
 
 export const userApi = {
-  // Klinik personel listesini getir
-  getAll: (): Promise<ApiResponse<User[]>> => 
-    api.get('/users'),
+  // Klinik personel listesini getir (Sayfalama ve arama destekli)
+  getAll: (params?: { page?: number; per_page?: number; search?: string }): Promise<ApiResponse<any>> => 
+    api.get('/users', { params }),
 
   // Personel bilgilerini güncelle
   update: (id: number, data: UpdateUserPayload): Promise<ApiResponse<User>> => 

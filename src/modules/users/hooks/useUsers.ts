@@ -5,14 +5,14 @@ import { App } from 'antd';
 import { userApi } from '../services/userApi';
 import { UpdateUserPayload, InviteUserPayload } from '../types/user.types';
 
-export const useUsers = () => {
+export const useUsers = (params?: { page?: number; per_page?: number; search?: string }) => {
   const queryClient = useQueryClient();
   const { message } = App.useApp();
 
   // Personel listesini getir
   const usersQuery = useQuery({
-    queryKey: ['users'],
-    queryFn: userApi.getAll,
+    queryKey: ['users', params],
+    queryFn: () => userApi.getAll(params),
     select: (data) => data.data,
   });
 
@@ -56,7 +56,7 @@ export const useUsers = () => {
   });
 
   return {
-    users: usersQuery.data || [],
+    usersData: usersQuery.data, // Artık bir Pagination objesi ({ data: User[], total: number, ... }) dönebilir
     isLoading: usersQuery.isLoading,
     inviteUser: inviteMutation.mutateAsync,
     createUser: createMutation.mutateAsync,
