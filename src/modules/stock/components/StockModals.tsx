@@ -1,7 +1,7 @@
 // src/modules/stock/components/StockModals.tsx
 
 import React from 'react'
-import { Modal, Form, Input, InputNumber, Select, Alert, Button, Space, Radio } from 'antd'
+import { Modal, Form, Input, InputNumber, Select, Alert, Button, Space, Radio, Checkbox } from 'antd'
 import type { FormInstance } from 'antd'
 import { Stock, StockAdjustmentRequest, StockUsageRequest } from '../types/stock.types'
 import { StockForm } from './StockForm'
@@ -256,6 +256,17 @@ export const StockModals: React.FC<StockModalsProps> = ({
           >
             <Input placeholder="Kullanan kişi adı (opsiyonel)" />
           </Form.Item>
+
+          {selectedStock && selectedStock.reserved_stock > 0 && (
+            <Form.Item
+              name="is_from_reserved"
+              valuePropName="checked"
+            >
+              <Checkbox>
+                Rezerve stoktan kullan ({selectedStock.reserved_stock} {selectedStock.unit} rezerve)
+              </Checkbox>
+            </Form.Item>
+          )}
 
           <Form.Item
             label="Notlar"

@@ -46,24 +46,25 @@ const ensureCsrf = async (configBaseURL: string) => {
       baseUrl = window.location.origin + baseUrl
     }
 
-    // ✅ Güvenli URL parsing — split('/api')[0] yerine standart URL API kullanılıyor
-    // Bu sayede /api/v1, /api/v2 gibi path prefix'ler de doğru çalışır
     const url = new URL(baseUrl)
     const domain = `${url.protocol}//${url.host}`
 
     csrfPromise = axios
       .get(`${domain}/sanctum/csrf-cookie`, { withCredentials: true })
-      .then(() => {}) // Promise<AxiosResponse> → Promise<void> tip uyumu
+      .then(() => {})
       .catch((error) => {
-        console.error('CSRF token alınamadı:', error)
+        csrfPromise = null // Hata durumunda tekrar denenebilmesi için sıfırla
+        throw error
       })
       .finally(() => {
-        // Başarılı veya başarısız olsun, bir sonraki istek için sıfırla
+        // Not: catch'ten sonra finally çalışır. 
+        // Eğer başarılıysa null yaparız ki bir sonraki ihtiyaçta tekrar çalışsın.
+        // Eğer başarısızsa catch içinde zaten null yaptık.
         csrfPromise = null
       })
   }
 
-  await csrfPromise
+  return csrfPromise
 }
 
 // Request Interceptor
@@ -72,7 +73,12 @@ api.interceptors.request.use(
     const method = config.method?.toLowerCase()
     // CSRF protection for state-changing requests (except GET)
     if (method && method !== 'get') {
-      await ensureCsrf(config.baseURL || api.defaults.baseURL || '')
+      try {
+        await ensureCsrf(config.baseURL || api.defaults.baseURL || '')
+      } catch (error) {
+        // CSRF alınamazsa isteği durdur
+        return Promise.reject(error)
+      }
     }
     return config
   },
