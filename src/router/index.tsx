@@ -67,7 +67,7 @@ const router = createBrowserRouter([
       {
         path: 'employees',
         element: (
-          <RoleProtectedRoute roles={['Company Owner', 'Super Admin']}>
+          <RoleProtectedRoute roles={['Company Owner', 'Super Admin']} permissions={['manage-users']}>
             <UserManagementPage />
           </RoleProtectedRoute>
         )
@@ -75,7 +75,7 @@ const router = createBrowserRouter([
       {
         path: 'roles',
         element: (
-          <RoleProtectedRoute roles={['Company Owner', 'Super Admin']}>
+          <RoleProtectedRoute roles={['Company Owner', 'Super Admin']} permissions={['manage-users']}>
             <RolesPage />
           </RoleProtectedRoute>
         )

@@ -19,7 +19,7 @@ export const userApi = {
 
   // Yeni personel davet et (Email ile)
   inviteUser: (data: InviteUserPayload): Promise<ApiResponse<User>> => 
-    api.post('/invitations', data),
+    api.post('/invitations/invite', data),
 
   // Direkt kullanıcı oluştur (Süper Admin yetkisiyle)
   create: (data: any): Promise<ApiResponse<User>> => 

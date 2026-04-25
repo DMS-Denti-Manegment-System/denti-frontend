@@ -23,6 +23,7 @@ import type { MenuProps } from 'antd'
 import { usePendingAlertCount } from '@/modules/alerts/hooks/useAlerts'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
 import { usePermissions } from '@/shared/hooks/usePermissions'
+import { DebugInfo } from '@/shared/components/DebugInfo'
 
 const { Header, Sider, Content } = Layout
 const { Title } = Typography
@@ -33,7 +34,7 @@ export const AppLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
-  const { isSuperAdmin, isCompanyOwner } = usePermissions()
+  const { isSuperAdmin, isCompanyOwner, hasPermission, isAdmin } = usePermissions()
   
   // Bekleyen uyarı sayısını çek (API çağrısı yapacak, 30 saniyede bir güncelleyecek)
   const { data: pendingAlertCount } = usePendingAlertCount()
@@ -96,8 +97,8 @@ export const AppLayout: React.FC = () => {
       label: 'Raporlar',
       onClick: () => navigate('/reports')
     },
-    // Yönetim Alt Menüsü - Company Owner veya Super Admin role sahip kullanıcılara gösterilir
-    ...((isCompanyOwner() || isSuperAdmin()) ? [
+    // Yönetim Alt Menüsü - manage-users yetkisine veya Admin/SuperAdmin/CompanyOwner role sahip kullanıcılara gösterilir
+    ...((isAdmin || hasPermission('manage-users')) ? [
       {
         key: 'management',
         icon: <SettingOutlined />,
@@ -227,6 +228,7 @@ export const AppLayout: React.FC = () => {
           overflow: 'auto'
         }}>
           <Outlet />
+          <DebugInfo />
         </Content>
       </Layout>
     </Layout>

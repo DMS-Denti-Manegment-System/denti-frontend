@@ -5,7 +5,13 @@ import { Card, Typography } from 'antd'
 
 const { Text } = Typography
 
+import { useAuthStore } from '../stores/authStore'
+import { usePermissions } from '../hooks/usePermissions'
+
 export const DebugInfo: React.FC = () => {
+  const { user, permissions } = useAuthStore()
+  const { isAdmin, isSuperAdmin, isCompanyOwner } = usePermissions()
+
   if (import.meta.env.MODE === 'production') return null;
   return (
     <Card title="Debug Info" style={{ margin: '16px 0' }}>
@@ -14,12 +20,16 @@ export const DebugInfo: React.FC = () => {
         <Text code>{import.meta.env.VITE_API_URL || 'Not set'}</Text>
       </div>
       <div>
-        <Text strong>Environment: </Text>
-        <Text code>{import.meta.env.MODE}</Text>
+        <Text strong>User Roles: </Text>
+        <Text code>{JSON.stringify(user?.roles || user?.role || 'No roles')}</Text>
       </div>
       <div>
-        <Text strong>Full URL Test: </Text>
-        <Text code>{(import.meta.env.VITE_API_URL || 'http://localhost:8000/api') + '/stocks'}</Text>
+        <Text strong>Permissions: </Text>
+        <Text code>{JSON.stringify(permissions || [])}</Text>
+      </div>
+      <div>
+        <Text strong>Flags: </Text>
+        <Text code>isAdmin: {String(isAdmin)} | isSuperAdmin: {String(isSuperAdmin())} | isCompanyOwner: {String(isCompanyOwner())}</Text>
       </div>
     </Card>
   )
