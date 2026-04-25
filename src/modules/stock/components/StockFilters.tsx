@@ -2,8 +2,10 @@
 
 import React from 'react'
 import { Card, Row, Col, Input, Select, Button, Space } from 'antd'
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { PlusOutlined, ReloadOutlined, TagsOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import { StockFilter } from '../types/stock.types'
+import { useCategories } from '@/modules/category/hooks/useCategories'
 
 const { Search } = Input
 const { Option } = Select
@@ -19,18 +21,8 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
   onFilterChange,
   onAdd,
 }) => {
-  const categoryOptions = [
-    { label: 'Diş Hekimliği Malzemeleri', value: 'dental_materials' },
-    { label: 'Anestezi Malzemeleri', value: 'anesthesia' },
-    { label: 'Cerrahi Aletler', value: 'surgical_instruments' },
-    { label: 'Röntgen Malzemeleri', value: 'xray_materials' },
-    { label: 'Temizlik Malzemeleri', value: 'cleaning_supplies' },
-    { label: 'Ortodonti Malzemeleri', value: 'orthodontics' },
-    { label: 'Endodonti Malzemeleri', value: 'endodontics' },
-    { label: 'Protez Malzemeleri', value: 'prosthetics' },
-    { label: 'İmplant Malzemeleri', value: 'implants' },
-    { label: 'Diğer', value: 'other' }
-  ]
+  const navigate = useNavigate()
+  const { categories, isLoading: isCategoriesLoading } = useCategories()
 
   const levelOptions = [
     { label: 'Normal', value: 'normal' },
@@ -56,11 +48,12 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
             placeholder="Kategori"
             style={{ width: '100%' }}
             allowClear
+            loading={isCategoriesLoading}
             onChange={(value) => onFilterChange('category', value)}
           >
-            {categoryOptions.map(option => (
-              <Option key={option.value} value={option.value}>
-                {option.label}
+            {(categories ?? []).map(option => (
+              <Option key={option.id} value={option.name}>
+                {option.name}
               </Option>
             ))}
           </Select>
@@ -94,15 +87,22 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
           </Select>
         </Col>
         
-        <Col xs={12} md={5} style={{ textAlign: 'right' }}>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
-            onClick={onAdd}
-            block
-          >
-            Yeni Stok
-          </Button>
+        <Col xs={24} md={5} style={{ textAlign: 'right' }}>
+          <Space>
+            <Button 
+              icon={<TagsOutlined />} 
+              onClick={() => navigate('/stock-categories')}
+            >
+              Kategorileri Yönet
+            </Button>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={onAdd}
+            >
+              Yeni Stok
+            </Button>
+          </Space>
         </Col>
       </Row>
     </Card>

@@ -17,9 +17,10 @@ import {
   PlusOutlined, 
   SaveOutlined
 } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import { Stock } from '../types/stock.types'
 import { useStockFormLogic } from '../hooks/useStockFormLogic'
-import { UNIT_OPTIONS, CATEGORY_OPTIONS, CURRENCY_OPTIONS } from '../constants/stockConstants'
+import { UNIT_OPTIONS, CURRENCY_OPTIONS } from '../constants/stockConstants'
 import { STOCK_VALIDATION_RULES } from '../utils/stockValidation'
 
 const { Option } = Select
@@ -36,6 +37,7 @@ export const StockForm: React.FC<StockFormProps> = ({
   onSuccess, 
   onCancel 
 }) => {
+  const navigate = useNavigate()
   const {
     form,
     handleFinish,
@@ -43,7 +45,9 @@ export const StockForm: React.FC<StockFormProps> = ({
     suppliers,
     isSuppliersLoading,
     clinics,
-    isClinicsLoading
+    isClinicsLoading,
+    categories,
+    isCategoriesLoading
   } = useStockFormLogic(stock, onSuccess)
 
   const hasSubUnit = Form.useWatch('has_sub_unit', form)
@@ -104,14 +108,22 @@ export const StockForm: React.FC<StockFormProps> = ({
 
         <Col span={16}>
           <Form.Item
-            label="Kategori"
+            label={
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                <span>Kategori</span>
+                <Button type="link" size="small" onClick={() => navigate('/stock-categories')} style={{ padding: 0 }}>Yönet</Button>
+              </div>
+            }
             name="category"
             rules={STOCK_VALIDATION_RULES.category}
           >
-            <Select placeholder="Kategori seçin">
-              {CATEGORY_OPTIONS.map(option => (
-                <Option key={option.value} value={option.value}>
-                  {option.label}
+            <Select 
+              placeholder="Kategori seçin"
+              loading={isCategoriesLoading}
+            >
+              {(categories ?? []).map(cat => (
+                <Option key={cat.id} value={cat.name}>
+                  {cat.name}
                 </Option>
               ))}
             </Select>

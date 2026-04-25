@@ -6,6 +6,7 @@ import dayjs, { Dayjs } from 'dayjs'
 import { useStocks } from './useStocks'
 import { useSuppliers } from '../../supplier/hooks/useSuppliers'
 import { useClinics } from '../../clinics/hooks/useClinics'
+import { useCategories } from '../../category/hooks/useCategories'
 import { CreateStockRequest, Stock } from '../types/stock.types'
 
 export interface StockFormValues {
@@ -40,6 +41,7 @@ export const useStockFormLogic = (stock?: Stock, onSuccess?: () => void) => {
   const { createStock, updateStock, isCreating, isUpdating } = useStocks({})
   const { suppliers, isLoading: isSuppliersLoading } = useSuppliers()
   const { clinics, isLoading: isClinicsLoading } = useClinics()
+  const { categories, isLoading: isCategoriesLoading } = useCategories()
 
   useEffect(() => {
     if (stock) {
@@ -108,6 +110,8 @@ export const useStockFormLogic = (stock?: Stock, onSuccess?: () => void) => {
     suppliers,
     isSuppliersLoading,
     clinics,
-    isClinicsLoading
+    isClinicsLoading,
+    categories,
+    isCategoriesLoading: isCategoriesLoading
   }
 }

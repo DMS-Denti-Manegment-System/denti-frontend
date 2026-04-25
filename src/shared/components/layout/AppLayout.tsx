@@ -17,6 +17,8 @@ import {
   SafetyCertificateOutlined,
   AppstoreOutlined,
   DashboardOutlined,
+  CheckSquareOutlined,
+  TagsOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import type { MenuProps } from 'antd'
@@ -61,6 +63,12 @@ export const AppLayout: React.FC = () => {
       onClick: () => navigate('/stocks')
     },
     {
+      key: '/stock-categories',
+      icon: <TagsOutlined />,
+      label: 'Stok Kategorileri',
+      onClick: () => navigate('/stock-categories')
+    },
+    {
       key: '/suppliers',
       icon: <TeamOutlined />,
       label: 'Tedarikçiler',
@@ -90,6 +98,12 @@ export const AppLayout: React.FC = () => {
         </div>
       ),
       onClick: () => navigate('/alerts')
+    },
+    {
+      key: '/todos',
+      icon: <CheckSquareOutlined />,
+      label: 'Yapılacaklar',
+      onClick: () => navigate('/todos')
     },
     {
       key: '/reports',
@@ -228,7 +242,6 @@ export const AppLayout: React.FC = () => {
           overflow: 'auto'
         }}>
           <Outlet />
-          <DebugInfo />
         </Content>
       </Layout>
     </Layout>

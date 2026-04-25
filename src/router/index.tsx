@@ -17,6 +17,8 @@ import { CompanyManagementPage } from '../modules/admin/pages/CompanyManagementP
 import { UserManagementPage } from '../modules/users/pages/UserManagementPage'
 import { RolesPage } from '../modules/roles/pages/RolesPage'
 import { ProfilePage } from '../modules/profile/pages/ProfilePage'
+import { TodosPage } from '../modules/todo/pages/TodosPage'
+import { CategoriesPage } from '../modules/category/pages/CategoriesPage'
 
 
 const router = createBrowserRouter([
@@ -45,6 +47,10 @@ const router = createBrowserRouter([
         element: <StocksPage />
       },
       {
+        path: 'stock-categories',
+        element: <CategoriesPage />
+      },
+      {
         path: 'suppliers',
         element: <SuppliersPage />
       },
@@ -59,6 +65,10 @@ const router = createBrowserRouter([
       {
         path: 'alerts',
         element: <AlertsPage />
+      },
+      {
+        path: 'todos',
+        element: <TodosPage />
       },
       {
         path: 'reports',

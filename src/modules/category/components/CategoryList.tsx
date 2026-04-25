@@ -81,7 +81,7 @@ export const CategoryList: React.FC = () => {
           
           <Popconfirm
             title="Bu kategoriyi silmek istediğinizden emin misiniz?"
-            description="Bu kategoriye ait todolar da silinecektir."
+            description="Bu kategoriye bağlı kayıtlar (Stok, Todo vb.) etkilenebilir."
             onConfirm={() => deleteCategory(record.id)}
             okText="Evet"
             cancelText="Hayır"
