@@ -20,6 +20,7 @@ import { ProfilePage } from '../modules/profile/pages/ProfilePage'
 import { TodosPage } from '../modules/todo/pages/TodosPage'
 import { CategoriesPage } from '../modules/category/pages/CategoriesPage'
 
+import { HomePage } from '../modules/dashboard/pages/HomePage'
 
 const router = createBrowserRouter([
   {
@@ -40,7 +41,7 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <ReportsPage />
+        element: <HomePage />
       },
       {
         path: 'stocks',
