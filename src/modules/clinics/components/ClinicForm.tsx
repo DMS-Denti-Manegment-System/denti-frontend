@@ -50,19 +50,7 @@ export const ClinicForm: React.FC<ClinicFormProps> = ({
       // Form alanlarını mevcut klinik verileriyle doldur
       form.setFieldsValue({
         name: clinic.name,
-        code: clinic.code,
-        address: clinic.address,
-        phone: clinic.phone,
-        email: clinic.email,
-        manager_name: clinic.manager_name,
-        description: clinic.description,
-        city: clinic.city,
-        district: clinic.district,
-        postal_code: clinic.postal_code,
-        website: clinic.website,
-        opening_hours: clinic.opening_hours,
-        is_active: clinic.is_active,
-        coordinates: clinic.coordinates
+        is_active: clinic.is_active
       })
     }
   }, [clinic, form])
@@ -106,7 +94,7 @@ export const ClinicForm: React.FC<ClinicFormProps> = ({
       </Divider>
 
       <Row gutter={16}>
-        <Col xs={24} sm={12}>
+        <Col span={24}>
           <Form.Item
             label="Klinik Adı"
             name="name"
@@ -120,24 +108,6 @@ export const ClinicForm: React.FC<ClinicFormProps> = ({
               prefix={<ShopOutlined />}
               placeholder="Klinik adını girin"
               size="large"
-            />
-          </Form.Item>
-        </Col>
-
-        <Col xs={24} sm={12}>
-          <Form.Item
-            label="Klinik Kodu"
-            name="code"
-            rules={[
-              { required: true, message: 'Klinik kodu gereklidir!' },
-              { min: 2, message: 'Klinik kodu en az 2 karakter olmalıdır!' },
-              { max: 50, message: 'Klinik kodu en fazla 50 karakter olabilir!' }
-            ]}
-          >
-            <Input 
-              placeholder="Örn: KLN001"
-              size="large"
-              style={{ textTransform: 'uppercase' }}
             />
           </Form.Item>
         </Col>
@@ -325,41 +295,10 @@ export const ClinicForm: React.FC<ClinicFormProps> = ({
 
         <Col xs={24} sm={12}>
           <Form.Item
-            label="Koordinatlar (Enlem, Boylam)"
-            name="coordinates"
-          >
-            <Input.Group compact>
-              <Form.Item
-                name={['coordinates', 'latitude']}
-                noStyle
-                rules={[
-                  { type: 'number', min: -90, max: 90, message: 'Geçerli enlem değeri girin!' }
-                ]}
-              >
-                <Input 
-                  placeholder="Enlem (41.0082)"
-                  style={{ width: '50%' }}
-                />
-              </Form.Item>
-              <Form.Item
-                name={['coordinates', 'longitude']}
-                noStyle
-                rules={[
-                  { type: 'number', min: -180, max: 180, message: 'Geçerli boylam değeri girin!' }
-                ]}
-              >
-                <Input 
-                  placeholder="Boylam (28.9784)"
-                  style={{ width: '50%' }}
-                />
-              </Form.Item>
-            </Input.Group>
-          </Form.Item>
-
-          <Form.Item
             label="Durum"
             name="is_active"
             valuePropName="checked"
+            style={{ marginTop: 8 }}
           >
             <Switch 
               checkedChildren="Aktif" 

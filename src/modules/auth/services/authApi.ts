@@ -7,6 +7,9 @@ export const authApi = {
   login: (credentials: LoginCredentials): Promise<AuthResponse> => 
     api.post('/login', credentials),
 
+  adminLogin: (credentials: Omit<LoginCredentials, 'clinic_code'>): Promise<AuthResponse> =>
+    api.post('/admin/login', credentials),
+
   verify2fa: (data: TwoFactorPayload): Promise<AuthResponse> =>
     api.post('/auth/2fa/verify', data),
 

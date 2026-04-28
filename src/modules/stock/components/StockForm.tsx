@@ -51,6 +51,7 @@ export const StockForm: React.FC<StockFormProps> = ({
   } = useStockFormLogic(stock, onSuccess)
 
   const hasSubUnit = Form.useWatch('has_sub_unit', form)
+  const trackExpiry = Form.useWatch('track_expiry', form)
 
   return (
     <Form
@@ -380,6 +381,31 @@ export const StockForm: React.FC<StockFormProps> = ({
           </Form.Item>
         </Col>
       </Row>
+
+      {trackExpiry && (
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="SKT Sarı Alarm (Gün)"
+              name="expiry_yellow_days"
+              tooltip="Son kullanma tarihine kaç gün kala sarı uyarı verilsin?"
+              initialValue={30}
+            >
+              <InputNumber min={1} style={{ width: '100%' }} />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="SKT Kırmızı Alarm (Gün)"
+              name="expiry_red_days"
+              tooltip="Son kullanma tarihine kaç gün kala kırmızı (kritik) uyarı verilsin?"
+              initialValue={15}
+            >
+              <InputNumber min={1} style={{ width: '100%' }} />
+            </Form.Item>
+          </Col>
+        </Row>
+      )}
 
       <Form.Item
         label="Aktif Durumu"

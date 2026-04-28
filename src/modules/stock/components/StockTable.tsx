@@ -13,7 +13,8 @@ import {
   ExclamationCircleOutlined,
   PauseOutlined,
   PlayCircleOutlined,
-  StopOutlined
+  StopOutlined,
+  LineChartOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
@@ -33,6 +34,7 @@ interface StockTableProps {
   onReactivate: (id: number) => void
   onAdjust: (stock: Stock) => void
   onUse: (stock: Stock) => void
+  onViewHistory: (stock: Stock) => void
 }
 
 export const StockTable: React.FC<StockTableProps> = ({
@@ -45,6 +47,7 @@ export const StockTable: React.FC<StockTableProps> = ({
   onReactivate,
   onAdjust,
   onUse,
+  onViewHistory,
 }) => {
   const {
     advancedModalStock,
@@ -165,12 +168,17 @@ export const StockTable: React.FC<StockTableProps> = ({
       key: 'expiry_date',
       width: 120,
       align: 'center',
-      render: (date) => {
+      render: (date, record) => {
         if (!date) return <Text type="secondary">-</Text>
         const days = dayjs(date).diff(dayjs(), 'day')
+        let color = 'inherit'
+        if (days < 0) color = '#cf1322' // Geçmiş
+        else if (days <= (record.expiry_red_days || 15)) color = '#ff4d4f' // Kritik
+        else if (days <= (record.expiry_yellow_days || 30)) color = '#faad14' // Uyarı
+
         return (
           <Tooltip title={`${days < 0 ? 'Geçti' : `${days} gün kaldı`}`}>
-            <span style={{ color: days < 30 ? '#ff4d4f' : 'inherit' }}>
+            <span style={{ color, fontWeight: days <= (record.expiry_yellow_days || 30) ? 'bold' : 'normal' }}>
               {dayjs(date).format('DD/MM/YYYY')}
             </span>
           </Tooltip>
@@ -200,6 +208,15 @@ export const StockTable: React.FC<StockTableProps> = ({
         const isInactive = status.type === 'inactive'
         
         const menuItems: MenuProps['items'] = [
+          {
+            key: 'history',
+            label: 'Rapor / Geçmiş',
+            icon: <LineChartOutlined />,
+            onClick: () => onViewHistory(record)
+          },
+          {
+            type: 'divider'
+          },
           {
             key: 'use',
             label: 'Stok Kullan',
@@ -272,7 +289,8 @@ export const StockTable: React.FC<StockTableProps> = ({
             backgroundColor: isInactive ? '#fafafa' : '#fff',
             cursor: 'pointer',
             borderLeft: isInactive ? '3px solid #faad14' : 'none'
-          }
+          },
+          onClick: () => onViewHistory(record)
         }
       }}
       className="premium-table"

@@ -194,3 +194,14 @@ export const useStockStats = () => {
     staleTime: STALE_TIME,
   })
 }
+
+// Stok hareketleri için hook
+export const useStockTransactions = (id: number) => {
+  return useQuery({
+    queryKey: ['stocks', id, 'transactions'],
+    queryFn: () => stockApi.getTransactions(id),
+    select: (data) => data.data,
+    enabled: !!id,
+    staleTime: 60000,
+  })
+}

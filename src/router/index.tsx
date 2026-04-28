@@ -6,6 +6,7 @@ import { AppLayout } from '../shared/components/layout/AppLayout'
 import { ProtectedRoute } from './ProtectedRoute'
 import { RoleProtectedRoute } from './RoleProtectedRoute'
 import { LoginPage } from '../modules/auth/pages/LoginPage'
+import { AdminLoginPage } from '../modules/auth/pages/AdminLoginPage'
 import { AcceptInvitationPage } from '../modules/auth/pages/AcceptInvitationPage' 
 import { StocksPage } from '../modules/stock/pages/StocksPage'
 import { SuppliersPage } from '../modules/supplier/pages/SuppliersPage'
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />
+  },
+  {
+    path: '/admin/login',
+    element: <AdminLoginPage />
   },
   {
     path: '/accept-invitation/:token',

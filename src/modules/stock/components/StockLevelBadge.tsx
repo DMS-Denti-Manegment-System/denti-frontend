@@ -22,8 +22,12 @@ export const StockLevelBadge: React.FC<StockLevelBadgeProps> = ({ stock }) => {
         return { level: 'expired', color: 'default', text: 'Süresi Geçmiş' }
       }
       
-      if (daysUntilExpiry <= 7) {
-        return { level: 'expiring', color: 'red', text: `${daysUntilExpiry} gün kaldı` }
+      if (daysUntilExpiry <= (stock.expiry_red_days || 15)) {
+        return { level: 'critical', color: 'red', text: `S.K.T: ${daysUntilExpiry} Gün!` }
+      }
+
+      if (daysUntilExpiry <= (stock.expiry_yellow_days || 30)) {
+        return { level: 'warning', color: 'warning', text: `S.K.T: ${daysUntilExpiry} Gün` }
       }
     }
     

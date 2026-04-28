@@ -64,6 +64,9 @@ export const stockApi = {
   useStock: (id: number, data: StockUsageRequest): Promise<ApiResponse<Stock>> =>
     api.post(`/stocks/${id}/use`, data),
 
+  getTransactions: (id: number): Promise<ApiResponse<any[]>> =>
+    api.get(`/stocks/${id}/transactions`),
+
   // Stock Levels
   getLowStockItems: (): Promise<ApiResponse<Stock[]>> => 
     api.get('/stocks/low-level'),

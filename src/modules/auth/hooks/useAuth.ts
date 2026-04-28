@@ -44,6 +44,25 @@ export const useAuth = () => {
     }
   };
 
+  const adminLogin = async (credentials: Omit<LoginCredentials, 'clinic_code'>) => {
+    setLoading(true);
+    try {
+      const response = await authApi.adminLogin(credentials);
+      
+      if (response.success && response.data) {
+        setAuth(response.data.user, response.data.permissions ?? []);
+        message.success('Admin girişi başarılı! Hoş geldiniz.');
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error: any) {
+      console.error('Admin login error:', error);
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const verify2fa = async (data: TwoFactorPayload) => {
     setLoading(true);
     try {
@@ -104,6 +123,7 @@ export const useAuth = () => {
 
   return {
     login,
+    adminLogin,
     verify2fa,
     logout,
     checkSession,

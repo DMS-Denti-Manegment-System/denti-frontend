@@ -54,9 +54,6 @@ export const ClinicTable: React.FC<ClinicTableProps> = ({
             {record.name}
           </div>
           <div style={{ color: '#666', fontSize: '12px' }}>
-            Kod: {record.code}
-          </div>
-          <div style={{ color: '#666', fontSize: '12px' }}>
             <EnvironmentOutlined /> {record.city}, {record.district}
           </div>
         </div>

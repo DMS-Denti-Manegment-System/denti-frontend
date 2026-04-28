@@ -2,10 +2,11 @@
 
 import React from 'react'
 import { Card, Row, Col, Input, Select, Button, Space } from 'antd'
-import { PlusOutlined, ReloadOutlined, TagsOutlined } from '@ant-design/icons'
+import { PlusOutlined, TagsOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { StockFilter } from '../types/stock.types'
 import { useCategories } from '@/modules/category/hooks/useCategories'
+import { useClinics } from '@/modules/clinics/hooks/useClinics'
 
 const { Search } = Input
 const { Option } = Select
@@ -23,18 +24,21 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
 }) => {
   const navigate = useNavigate()
   const { categories, isLoading: isCategoriesLoading } = useCategories()
+  const { clinics, isLoading: isClinicsLoading } = useClinics()
 
   const levelOptions = [
     { label: 'Normal', value: 'normal' },
-    { label: 'Düşük Seviye', value: 'low' },
-    { label: 'Kritik Seviye', value: 'critical' },
+    { label: 'Düşük Stok (Sarı)', value: 'low' },
+    { label: 'Kritik Stok (Kırmızı)', value: 'critical' },
+    { label: 'Yaklaşan SKT (Sarı)', value: 'near_expiry' },
+    { label: 'Kritik SKT (Kırmızı)', value: 'critical_expiry' },
     { label: 'Süresi Geçmiş', value: 'expired' }
   ]
 
   return (
     <Card style={{ marginBottom: 24 }}>
-      <Row gutter={16} align="middle">
-        <Col xs={24} md={6}>
+      <Row gutter={[16, 16]} align="middle">
+        <Col xs={24} md={5}>
           <Search
             placeholder="Stok adı ile ara..."
             onSearch={onSearch}
@@ -42,8 +46,24 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
             allowClear
           />
         </Col>
+
+        <Col xs={12} md={4}>
+          <Select
+            placeholder="Klinik Seçin"
+            style={{ width: '100%' }}
+            allowClear
+            loading={isClinicsLoading}
+            onChange={(value) => onFilterChange('clinic_id', value)}
+          >
+            {(clinics ?? []).map(clinic => (
+              <Option key={clinic.id} value={clinic.id}>
+                {clinic.name}
+              </Option>
+            ))}
+          </Select>
+        </Col>
         
-        <Col xs={12} md={5}>
+        <Col xs={12} md={3}>
           <Select
             placeholder="Kategori"
             style={{ width: '100%' }}
@@ -59,7 +79,7 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
           </Select>
         </Col>
         
-        <Col xs={12} md={4}>
+        <Col xs={12} md={3}>
           <Select
             placeholder="Seviye"
             style={{ width: '100%' }}
@@ -74,7 +94,7 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
           </Select>
         </Col>
         
-        <Col xs={12} md={4}>
+        <Col xs={12} md={3}>
           <Select
             placeholder="Durum"
             style={{ width: '100%' }}
@@ -87,13 +107,13 @@ export const StockFilters: React.FC<StockFiltersProps> = ({
           </Select>
         </Col>
         
-        <Col xs={24} md={5} style={{ textAlign: 'right' }}>
+        <Col xs={24} md={6} style={{ textAlign: 'right' }}>
           <Space>
             <Button 
               icon={<TagsOutlined />} 
               onClick={() => navigate('/stock-categories')}
             >
-              Kategorileri Yönet
+              Kategoriler
             </Button>
             <Button 
               type="primary" 

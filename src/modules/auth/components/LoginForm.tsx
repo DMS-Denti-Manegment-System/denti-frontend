@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, Modal, Space } from 'antd';
-import { UserOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, SafetyOutlined, BankOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -50,10 +50,17 @@ export const LoginForm: React.FC = () => {
           size="large"
         >
           <Form.Item
-            name="email"
-            rules={[{ required: true, message: 'Lütfen e-posta adresinizi girin!' }, { type: 'email', message: 'Geçerli bir e-posta girin!' }]}
+            name="clinic_code"
+            rules={[{ required: true, message: 'Lütfen klinik kodunu girin!' }]}
           >
-            <Input prefix={<UserOutlined />} placeholder="E-posta" />
+            <Input prefix={<BankOutlined />} placeholder="Klinik Kodu" />
+          </Form.Item>
+
+          <Form.Item
+            name="username"
+            rules={[{ required: true, message: 'Lütfen kullanıcı adınızı girin!' }]}
+          >
+            <Input prefix={<UserOutlined />} placeholder="Kullanıcı Adı" />
           </Form.Item>
 
           <Form.Item

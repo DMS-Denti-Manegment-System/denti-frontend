@@ -11,16 +11,21 @@ import { StockFilters } from './StockFilters'
 import { StockStats } from './StockStats'
 import { StockAlerts } from './StockAlerts'
 import { StockModals } from './StockModals'
+import { StockHistoryModal } from './StockHistoryModal'
+
+import { useAuthStore } from '../../../shared/stores/authStore'
 
 const { Title } = Typography
 
 export const StockList: React.FC = () => {
+  const { user } = useAuthStore()
   // State management
   const [filters, setFilters] = useState<StockFilter>({})
   const [editingStock, setEditingStock] = useState<Stock | null>(null)
   const [isFormModalVisible, setIsFormModalVisible] = useState(false)
   const [isAdjustModalVisible, setIsAdjustModalVisible] = useState(false)
   const [isUseModalVisible, setIsUseModalVisible] = useState(false)
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false)
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
   
   // Form instances
@@ -163,14 +168,24 @@ export const StockList: React.FC = () => {
   const handleAdjust = useCallback((stock: Stock) => {
     setSelectedStock(stock)
     setIsAdjustModalVisible(true)
-    adjustForm.resetFields()
-  }, [adjustForm])
+    adjustForm.setFieldsValue({
+      performed_by: user?.name,
+      is_sub_unit: false
+    })
+  }, [adjustForm, user])
 
   const handleUse = useCallback((stock: Stock) => {
     setSelectedStock(stock)
     setIsUseModalVisible(true)
-    useForm.resetFields()
-  }, [useForm])
+    useForm.setFieldsValue({
+      performed_by: user?.name
+    })
+  }, [useForm, user])
+
+  const handleViewHistory = useCallback((stock: Stock) => {
+    setSelectedStock(stock)
+    setIsHistoryModalVisible(true)
+  }, [])
 
   const onAdjustSubmit = useCallback(async (values: StockAdjustmentRequest) => {
     if (!selectedStock) return
@@ -207,6 +222,10 @@ export const StockList: React.FC = () => {
   const handleFormModalClose = useCallback(() => setIsFormModalVisible(false), [])
   const handleAdjustModalClose = useCallback(() => setIsAdjustModalVisible(false), [])
   const handleUseModalClose = useCallback(() => setIsUseModalVisible(false), [])
+  const handleHistoryModalClose = useCallback(() => {
+    setIsHistoryModalVisible(false)
+    setSelectedStock(null)
+  }, [])
 
   return (
     <div>
@@ -240,6 +259,7 @@ export const StockList: React.FC = () => {
           onReactivate={handleReactivate}      // ✅ YENİ - Aktif et
           onAdjust={handleAdjust}
           onUse={handleUse}
+          onViewHistory={handleViewHistory}
         />
       </Card>
 
@@ -265,6 +285,13 @@ export const StockList: React.FC = () => {
         onUseModalClose={handleUseModalClose}
         onUseSubmit={handleStockUsage}
         isUsing={isUsing}
+      />
+
+      {/* Geçmiş Hareketler Modal */}
+      <StockHistoryModal 
+        visible={isHistoryModalVisible}
+        stock={selectedStock}
+        onClose={handleHistoryModalClose}
       />
     </div>
   )

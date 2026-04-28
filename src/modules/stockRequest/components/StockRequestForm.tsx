@@ -24,6 +24,7 @@ import {
 import { useStockRequests } from '../hooks/useStockRequests'
 import { useClinics } from '@/modules/clinics/hooks/useClinics'
 import { useStocks } from '@/modules/stock/hooks/useStocks'
+import { useAuth } from '@/modules/auth/hooks/useAuth'
 import { CreateStockRequestRequest } from '../types/stockRequest.types'
 
 const { Option } = Select
@@ -39,40 +40,22 @@ export const StockRequestForm: React.FC<StockRequestFormProps> = ({
   onSuccess,
   defaultRequesterClinicId
 }) => {
+  const { user } = useAuth()
   const [form] = Form.useForm()
   const { createStockRequest, isCreating } = useStockRequests()
   const { clinics: allClinics } = useClinics()
   const { stocks: allStocks } = useStocks()
 
-  const [selectedRequesterClinic, setSelectedRequesterClinic] = useState<number | undefined>(defaultRequesterClinicId)
+  // Kullanıcının kliniğini varsayılan olarak ayarla
+  const initialRequesterClinicId = defaultRequesterClinicId || user?.clinic_id
+
+  const [selectedRequesterClinic, setSelectedRequesterClinic] = useState<number | undefined>(initialRequesterClinicId)
   const [selectedTargetClinic, setSelectedTargetClinic] = useState<number | undefined>()
   const [selectedStock, setSelectedStock] = useState<number | undefined>()
-  const [availableStocks, setAvailableStocks] = useState<Array<{
-    id: number
-    name: string
-    current_stock: number
-    min_stock_level: number
-    critical_stock_level: number
-    unit: string
-    category: string
-    brand?: string
-    clinic_id: number
-    status?: string
-    storage_location?: string
-  }>>([])
-  const [selectedStockInfo, setSelectedStockInfo] = useState<{
-    id: number
-    name: string
-    current_stock: number
-    min_stock_level: number
-    critical_stock_level: number
-    unit: string
-    category: string
-    brand?: string
-    clinic_id: number
-    status?: string
-    storage_location?: string
-  } | null>(null)
+  
+  // ... existing state ...
+  const [availableStocks, setAvailableStocks] = useState<Array<any>>([])
+  const [selectedStockInfo, setSelectedStockInfo] = useState<any | null>(null)
 
   // Hedef klinik seçildiğinde o klinikteki stokları filtrele
   useEffect(() => {
@@ -111,10 +94,10 @@ export const StockRequestForm: React.FC<StockRequestFormProps> = ({
     try {
       await createStockRequest({
         ...values,
-        requested_by: 'Sistem Kullanıcısı' // Bu dinamik olmalı
+        requested_by: user?.name || 'Sistem Kullanıcısı'
       })
       form.resetFields()
-      setSelectedRequesterClinic(defaultRequesterClinicId)
+      setSelectedRequesterClinic(initialRequesterClinicId)
       setSelectedTargetClinic(undefined)
       setSelectedStock(undefined)
       setSelectedStockInfo(null)
@@ -147,7 +130,7 @@ export const StockRequestForm: React.FC<StockRequestFormProps> = ({
         onFinish={onFinish}
         autoComplete="off"
         initialValues={{
-          requester_clinic_id: defaultRequesterClinicId
+          requester_clinic_id: initialRequesterClinicId
         }}
       >
         <Row gutter={16}>
@@ -163,6 +146,7 @@ export const StockRequestForm: React.FC<StockRequestFormProps> = ({
                 showSearch
                 optionFilterProp="children"
                 onChange={setSelectedRequesterClinic}
+                disabled={Boolean(user?.clinic_id && !user?.roles?.some(r => r.name === 'Super Admin'))}
               >
                 {activeClinics.map(clinic => (
                   <Option key={clinic.id} value={clinic.id}>

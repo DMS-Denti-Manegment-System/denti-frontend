@@ -133,7 +133,7 @@ export const AppLayout: React.FC = () => {
         ]
       }
     ] : []),
-    // Şirket Yönetimi - Sadece Super Admin role sahip kullanıcılara gösterilir
+    /* Şirket Yönetimi - Sadece Super Admin role sahip kullanıcılara gösterilir
     ...(isSuperAdmin() ? [
       {
         type: 'divider' as const,
@@ -145,6 +145,7 @@ export const AppLayout: React.FC = () => {
         onClick: () => navigate('/admin/companies')
       }
     ] : [])
+    */
   ]
 
   const userMenuItems: MenuProps['items'] = [

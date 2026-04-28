@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { Modal, Form, Input, Select, Switch } from 'antd';
-import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons';
+import { UserOutlined, MailOutlined, LockOutlined, BankOutlined } from '@ant-design/icons';
 import { useRoles } from '../../roles/hooks/useRoles';
+import { useClinics } from '@/modules/clinics/hooks/useClinics';
 
 interface UserCreateModalProps {
   open: boolean;
@@ -20,6 +21,7 @@ export const UserCreateModal: React.FC<UserCreateModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const { roles, isLoading: isRolesLoading } = useRoles();
+  const { clinics, isLoading: isClinicsLoading } = useClinics();
 
   return (
     <Modal
@@ -49,10 +51,17 @@ export const UserCreateModal: React.FC<UserCreateModalProps> = ({
         </Form.Item>
 
         <Form.Item
-          label="E-posta Adresi"
+          label="Kullanıcı Adı"
+          name="username"
+          rules={[{ required: true, message: 'Lütfen kullanıcı adı giriniz.' }]}
+        >
+          <Input prefix={<UserOutlined />} placeholder="Örn: ahmet123" />
+        </Form.Item>
+
+        <Form.Item
+          label="E-posta Adresi (İsteğe Bağlı)"
           name="email"
           rules={[
-            { required: true, message: 'Lütfen e-posta adresi giriniz.' },
             { type: 'email', message: 'Geçerli bir e-posta giriniz.' }
           ]}
         >
@@ -68,6 +77,23 @@ export const UserCreateModal: React.FC<UserCreateModalProps> = ({
           ]}
         >
           <Input.Password prefix={<LockOutlined />} placeholder="Şifre" />
+        </Form.Item>
+
+        <Form.Item
+          label="Klinik"
+          name="clinic_id"
+          rules={[{ required: true, message: 'Lütfen bir klinik seçiniz.' }]}
+        >
+          <Select 
+            placeholder="Klinik seçin" 
+            loading={isClinicsLoading}
+          >
+            {clinics?.map(clinic => (
+              <Select.Option key={clinic.id} value={clinic.id}>
+                {clinic.name}
+              </Select.Option>
+            ))}
+          </Select>
         </Form.Item>
 
         <Form.Item

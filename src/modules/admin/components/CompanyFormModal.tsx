@@ -38,7 +38,14 @@ export const CompanyFormModal: React.FC<Props> = ({ open, editingCompany, onCanc
         message.success('Şirket bilgileri güncellendi.');
         onSuccess();
       } else {
-        const response = await companyApi.createCompany(values);
+        // 🛡️ Ensure default values are sent even if they are not in the form fields
+        const payload = {
+          status: 'active',
+          subscription_plan: 'basic',
+          max_users: 5,
+          ...values
+        };
+        const response = await companyApi.createCompany(payload);
         message.success('Şirket başarıyla oluşturuldu.');
         onSuccess(response.data);
       }
@@ -77,6 +84,18 @@ export const CompanyFormModal: React.FC<Props> = ({ open, editingCompany, onCanc
             rules={[{ required: true, message: 'Lütfen şirket adını girin!' }]}
           >
             <Input placeholder="Örn: Akdent Diş Polikliniği" />
+          </Form.Item>
+
+          <Form.Item 
+            label="Klinik Kodu (Giriş için)" 
+            name="code" 
+            rules={[
+              { required: true, message: 'Lütfen klinik kodunu girin!' },
+              { pattern: /^[A-Z0-9]+$/, message: 'Sadece büyük harf ve rakam kullanabilirsiniz.' }
+            ]}
+            tooltip="Kullanıcıların giriş yaparken kullanacağı benzersiz kod (Örn: AKDENT01)"
+          >
+            <Input placeholder="AKDENT01" style={{ textTransform: 'uppercase' }} />
           </Form.Item>
           
           <Form.Item 
@@ -125,13 +144,24 @@ export const CompanyFormModal: React.FC<Props> = ({ open, editingCompany, onCanc
               Şirket Sahibi / Ana Yönetici Bilgileri
             </Typography.Text>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 24px' }}>
               <Form.Item 
                 label="Ad Soyad" 
                 name="owner_name" 
                 rules={[{ required: true, message: 'Lütfen yönetici adını girin!' }]}
               >
                 <Input placeholder="Yönetici Adı" />
+              </Form.Item>
+
+              <Form.Item 
+                label="Kullanıcı Adı" 
+                name="owner_username" 
+                rules={[
+                  { required: true, message: 'Lütfen kullanıcı adını girin!' },
+                  { pattern: /^[a-z0-9._]+$/, message: 'Sadece küçük harf, rakam, nokta ve alt çizgi kullanabilirsiniz.' }
+                ]}
+              >
+                <Input placeholder="admin.akdent" />
               </Form.Item>
               
               <Form.Item 

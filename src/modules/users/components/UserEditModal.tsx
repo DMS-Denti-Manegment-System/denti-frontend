@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { Modal, Form, Input, Select, Switch, Space, Typography } from 'antd';
 import { User, UpdateUserPayload } from '../types/user.types';
 import { useRoles } from '../../roles/hooks/useRoles';
+import { useClinics } from '@/modules/clinics/hooks/useClinics';
 
 const { Text } = Typography;
 
@@ -24,6 +25,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const { roles, isLoading: isRolesLoading } = useRoles();
+  const { clinics, isLoading: isClinicsLoading } = useClinics();
 
   useEffect(() => {
     if (open && initialValues) {
@@ -31,6 +33,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
         name: initialValues.name,
         is_active: initialValues.is_active,
         role_id: initialValues.roles[0]?.id, // İlk rolün ID'sini al
+        clinic_id: initialValues.clinic_id,
       });
     } else {
       form.resetFields();
@@ -52,8 +55,8 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
         onFinish={onSubmit}
       >
         <div style={{ marginBottom: '24px', padding: '12px', background: '#f5f5f5', borderRadius: '8px' }}>
-          <Text type="secondary">E-posta Adresi:</Text>
-          <div style={{ fontWeight: 500 }}>{initialValues?.email}</div>
+          <Text type="secondary">Kullanıcı Adı:</Text>
+          <div style={{ fontWeight: 500 }}>{initialValues?.username}</div>
         </div>
 
         <Form.Item
@@ -62,6 +65,23 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
           rules={[{ required: true, message: 'Lütfen ad soyad giriniz.' }]}
         >
           <Input placeholder="Örn: Dr. Ahmet Yılmaz" />
+        </Form.Item>
+
+        <Form.Item
+          label="Klinik"
+          name="clinic_id"
+          rules={[{ required: true, message: 'Lütfen bir klinik seçiniz.' }]}
+        >
+          <Select 
+            placeholder="Klinik seçin" 
+            loading={isClinicsLoading}
+          >
+            {clinics?.map(clinic => (
+              <Select.Option key={clinic.id} value={clinic.id}>
+                {clinic.name}
+              </Select.Option>
+            ))}
+          </Select>
         </Form.Item>
 
         <Form.Item

@@ -133,7 +133,6 @@ export const ClinicDetail: React.FC<ClinicDetailProps> = ({
                   {clinic.name}
                 </Title>
                 <Space wrap>
-                  <Tag color="blue">Kod: {clinic.code}</Tag>
                   <Tag color={clinic.is_active ? 'green' : 'red'}>
                     {clinic.is_active ? (
                       <>
@@ -252,22 +251,6 @@ export const ClinicDetail: React.FC<ClinicDetailProps> = ({
               </Descriptions.Item>
             </Descriptions>
             
-            {clinic.coordinates && (
-              <div style={{ marginTop: 16 }}>
-                <Text strong>Koordinatlar: </Text>
-                <Tag color="geekblue">
-                  {clinic.coordinates.latitude}, {clinic.coordinates.longitude}
-                </Tag>
-                <Button 
-                  size="small" 
-                  type="link"
-                  href={`https://maps.google.com?q=${clinic.coordinates.latitude},${clinic.coordinates.longitude}`}
-                  target="_blank"
-                >
-                  Haritada Göster
-                </Button>
-              </div>
-            )}
           </Card>
 
           {/* Çalışma Saatleri */}

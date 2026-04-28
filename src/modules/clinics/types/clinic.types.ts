@@ -3,7 +3,6 @@
 export interface Clinic {
   id: number
   name: string
-  code: string
   address: string
   phone: string
   email?: string
@@ -16,17 +15,12 @@ export interface Clinic {
   website?: string
   logo_url?: string
   opening_hours?: string
-  coordinates?: {
-    latitude: number
-    longitude: number
-  }
   created_at: string
   updated_at: string
 }
 
 export interface CreateClinicRequest {
   name: string
-  code: string
   address: string
   phone: string
   email?: string
@@ -38,15 +32,10 @@ export interface CreateClinicRequest {
   website?: string
   opening_hours?: string
   is_active?: boolean
-  coordinates?: {
-    latitude: number
-    longitude: number
-  }
 }
 
 export interface UpdateClinicRequest {
   name?: string
-  code?: string
   address?: string
   phone?: string
   email?: string
@@ -58,10 +47,6 @@ export interface UpdateClinicRequest {
   website?: string
   opening_hours?: string
   is_active?: boolean
-  coordinates?: {
-    latitude: number
-    longitude: number
-  }
 }
 
 export interface ClinicFilter {
@@ -72,7 +57,7 @@ export interface ClinicFilter {
   manager_name?: string
   page?: number
   per_page?: number
-  sort_by?: 'name' | 'code' | 'city' | 'created_at'
+  sort_by?: 'name' | 'city' | 'created_at'
   sort_order?: 'asc' | 'desc'
 }
 

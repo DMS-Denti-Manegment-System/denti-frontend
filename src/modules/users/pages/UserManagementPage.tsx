@@ -8,7 +8,8 @@ import {
   DeleteOutlined, 
   UserAddOutlined, 
   SearchOutlined,
-  TeamOutlined
+  TeamOutlined,
+  ShopOutlined
 } from '@ant-design/icons';
 import { useUsers } from '../hooks/useUsers';
 import { User, UpdateUserPayload, InviteUserPayload } from '../types/user.types';
@@ -96,8 +97,19 @@ export const UserManagementPage: React.FC = () => {
           <Avatar icon={<UserOutlined />} style={{ backgroundColor: record.is_active ? '#1890ff' : '#d9d9d9' }} />
           <div>
             <div style={{ fontWeight: 600 }}>{text}</div>
-            <Text type="secondary" size="small">{record.email}</Text>
+            <Text type="secondary" size="small">{record.username || record.email}</Text>
           </div>
+        </Space>
+      ),
+    },
+    {
+      title: 'Klinik',
+      dataIndex: 'clinic',
+      key: 'clinic',
+      render: (clinic: User['clinic']) => (
+        <Space>
+          <ShopOutlined style={{ color: '#1890ff' }} />
+          <span>{clinic?.name || <Text type="secondary">Atanmamış</Text>}</span>
         </Space>
       ),
     },
